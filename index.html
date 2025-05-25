@@ -8,6 +8,7 @@
     <link rel="apple-touch-icon" href="icon-192x192.png">
     <link rel="stylesheet" href="styles.css">
     <meta name="theme-color" content="#2196F3">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="運転日報">
@@ -51,6 +52,7 @@
             <nav class="tab-nav">
                 <button class="tab-btn active" onclick="showTab('records')">記録一覧</button>
                 <button class="tab-btn" onclick="showTab('export')">エクスポート</button>
+                <button class="tab-btn" onclick="showTab('maintenance')">メンテナンス</button>
             </nav>
 
             <!-- 記録一覧タブ -->
@@ -103,9 +105,63 @@
                     </div>
                 </div>
             </section>
+
+            <!-- メンテナンスタブ -->
+            <section id="maintenance-tab" class="tab-content">
+                <h2>メンテナンス</h2>
+                <div class="maintenance-section">
+                    <h3>Google マップから記録を作成</h3>
+                    <p class="help-text">Google マップで場所を検索し、GPS座標をコピーして下記に貼り付けてください。</p>
+                    
+                    <div class="form-group">
+                        <label for="manual-datetime">日時</label>
+                        <input type="datetime-local" id="manual-datetime">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manual-action">アクション</label>
+                        <select id="manual-action">
+                            <option value="出発">出発</option>
+                            <option value="経由">経由</option>
+                            <option value="到着">到着</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manual-destination">行先</label>
+                        <input type="text" id="manual-destination" placeholder="訪問先・目的地を入力">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manual-purpose">目的</label>
+                        <input type="text" id="manual-purpose" placeholder="訪問の目的を入力">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manual-gasMeter">ガソリンメーター (km)</label>
+                        <input type="number" id="manual-gasMeter" placeholder="メーター値">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="manual-gps">GPS座標</label>
+                        <input type="text" id="manual-gps" placeholder="例: 35.6812, 139.7671 または 35.6812, 139.7671">
+                        <small class="help-text">Google マップで場所を右クリックして座標をコピーできます</small>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="createManualRecord()">記録を作成</button>
+                </div>
+                
+                <div class="maintenance-section danger-zone">
+                    <h3>データ管理</h3>
+                    <p class="help-text danger-text">以下の操作は取り消すことができません。慎重に実行してください。</p>
+                    
+                    <button class="btn btn-danger" onclick="deleteAllRecords()">記録を全件削除</button>
+                </div>
+            </section>
         </main>
     </div>
 
     <script src="app.js"></script>
+    <script src="install-prompt.js"></script>
 </body>
 </html>

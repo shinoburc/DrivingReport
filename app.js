@@ -153,9 +153,16 @@ function showTab(tabName) {
     if (tabName === 'records') {
         document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
         document.getElementById('records-tab').classList.add('active');
-    } else {
+    } else if (tabName === 'export') {
         document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
         document.getElementById('export-tab').classList.add('active');
+    } else if (tabName === 'maintenance') {
+        document.querySelector('.tab-btn:nth-child(3)').classList.add('active');
+        document.getElementById('maintenance-tab').classList.add('active');
+        // 現在日時をセット
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        document.getElementById('manual-datetime').value = now.toISOString().slice(0, 16);
     }
 }
 
@@ -322,6 +329,105 @@ function exportAndEmail() {
     setTimeout(() => {
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }, 500);
+}
+
+function createManualRecord() {
+    const datetime = document.getElementById('manual-datetime').value;
+    const action = document.getElementById('manual-action').value;
+    const destination = document.getElementById('manual-destination').value.trim();
+    const purpose = document.getElementById('manual-purpose').value.trim();
+    const gasMeter = document.getElementById('manual-gasMeter').value.trim();
+    const gpsText = document.getElementById('manual-gps').value.trim();
+    
+    // 入力チェック
+    if (!datetime) {
+        alert('日時を入力してください。');
+        return;
+    }
+    
+    if (action === '出発' && (!destination || !purpose || !gasMeter)) {
+        alert('出発時は行先、目的、ガソリンメーター情報を全て入力してください。');
+        return;
+    }
+    
+    // GPS座標のパース
+    let location = null;
+    if (gpsText) {
+        // 様々な形式に対応: "35.6812, 139.7671" or "35.6812,139.7671" or "35.6812 139.7671"
+        const gpsMatch = gpsText.match(/(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)/);
+        if (gpsMatch) {
+            location = {
+                latitude: parseFloat(gpsMatch[1]),
+                longitude: parseFloat(gpsMatch[2]),
+                accuracy: 10 // 手動入力なので精度は10mとする
+            };
+        } else {
+            alert('GPS座標の形式が正しくありません。例: 35.6812, 139.7671');
+            return;
+        }
+    }
+    
+    // 記録の作成
+    const record = {
+        id: Date.now(),
+        action: action,
+        destination: destination || '',
+        purpose: purpose || '',
+        gasMeter: gasMeter ? parseFloat(gasMeter) : null,
+        datetime: new Date(datetime).toISOString(),
+        location: location
+    };
+    
+    // 記録を追加してソート
+    records.push(record);
+    records.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+    localStorage.setItem('drivingRecords', JSON.stringify(records));
+    
+    // フォームをクリア
+    document.getElementById('manual-destination').value = '';
+    document.getElementById('manual-purpose').value = '';
+    document.getElementById('manual-gasMeter').value = '';
+    document.getElementById('manual-gps').value = '';
+    
+    // 記録一覧タブに移動
+    displayRecords();
+    showTab('records');
+    
+    alert('記録を作成しました。');
+}
+
+function deleteAllRecords() {
+    // 現在の記録数を確認
+    if (records.length === 0) {
+        alert('削除する記録がありません。');
+        return;
+    }
+    
+    // 1回目の確認
+    const firstConfirm = confirm(`現在 ${records.length} 件の記録があります。\n本当に全ての記録を削除しますか？\n\nこの操作は取り消すことができません。`);
+    
+    if (!firstConfirm) {
+        return;
+    }
+    
+    // 2回目の確認
+    const secondConfirm = confirm('最終確認：本当に全ての記録を削除してもよろしいですか？\n\nこの操作を実行すると、全ての運転日報データが失われます。');
+    
+    if (!secondConfirm) {
+        return;
+    }
+    
+    // 全件削除を実行
+    records = [];
+    localStorage.setItem('drivingRecords', JSON.stringify(records));
+    
+    // 記録一覧を更新
+    displayRecords();
+    
+    alert('全ての記録を削除しました。');
+    
+    // 記録一覧タブに移動
+    showTab('records');
 }
 
 if ('serviceWorker' in navigator) {

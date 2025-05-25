@@ -4,6 +4,7 @@ const urlsToCache = [
   './index.html',
   './styles.css',
   './app.js',
+  './install-prompt.js',
   './manifest.json',
   './icon-192x192.png',
   './icon-512x512.png'
