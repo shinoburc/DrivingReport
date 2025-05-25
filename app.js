@@ -261,6 +261,69 @@ function downloadFile(blob, fileName) {
     document.body.removeChild(a);
 }
 
+function exportAndEmail() {
+    const exportType = document.querySelector('input[name="exportType"]:checked').value;
+    let filteredRecords = [];
+    let periodText = '';
+    
+    if (exportType === 'monthly') {
+        const month = document.getElementById('exportMonth').value;
+        if (!month) {
+            alert('対象月を選択してください。');
+            return;
+        }
+        
+        const [year, monthNum] = month.split('-');
+        periodText = `${year}年${monthNum}月`;
+        
+        filteredRecords = records.filter(record => {
+            return record.datetime.startsWith(month);
+        });
+    } else {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('開始日と終了日を選択してください。');
+            return;
+        }
+        
+        periodText = `${startDate} ～ ${endDate}`;
+        
+        const start = new Date(startDate).setHours(0, 0, 0, 0);
+        const end = new Date(endDate).setHours(23, 59, 59, 999);
+        
+        filteredRecords = records.filter(record => {
+            const recordDate = new Date(record.datetime).getTime();
+            return recordDate >= start && recordDate <= end;
+        });
+    }
+    
+    if (filteredRecords.length === 0) {
+        alert('指定された期間の記録がありません。');
+        return;
+    }
+    
+    const csv = generateCSV(filteredRecords);
+    const fileName = `運転日報_${periodText.replace(/[\/\s～]/g, '_')}.csv`;
+    
+    // メールアプリを開く
+    const subject = encodeURIComponent(`運転日報 ${periodText}`);
+    const body = encodeURIComponent(`運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`);
+    
+    // データURIスキームでCSVを作成
+    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    
+    // まずCSVをダウンロード
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    downloadFile(blob, fileName);
+    
+    // 少し遅らせてメールアプリを開く
+    setTimeout(() => {
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }, 500);
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')

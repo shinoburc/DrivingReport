@@ -243,6 +243,9 @@ main {
 
 .export-actions {
     margin-top: 1.5rem;
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
 .empty-state {
