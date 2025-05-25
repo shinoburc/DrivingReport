@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>運転日報アプリ</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="stylesheet" href="styles.css">
+    <meta name="theme-color" content="#2196F3">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="運転日報">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>運転日報アプリ</h1>
+        </header>
+
+        <main>
+            <!-- 入力フォーム -->
+            <section class="input-section">
+                <h2>記録の入力</h2>
+                <div class="form-group">
+                    <label for="destination">行先</label>
+                    <input type="text" id="destination" placeholder="訪問先・目的地を入力">
+                </div>
+                <div class="form-group">
+                    <label for="purpose">目的</label>
+                    <input type="text" id="purpose" placeholder="訪問の目的を入力">
+                </div>
+                <div class="form-group">
+                    <label for="gasMeter">ガソリンメーター (km)</label>
+                    <input type="number" id="gasMeter" placeholder="現在のメーター値">
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="recordAction('出発')">出発</button>
+                    <button class="btn btn-secondary" onclick="recordAction('経由')">経由</button>
+                    <button class="btn btn-success" onclick="recordAction('到着')">到着</button>
+                </div>
+                <div id="progress" class="progress" style="display: none;">
+                    <div class="progress-content">
+                        <div class="spinner"></div>
+                        <span>記録中...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- タブナビゲーション -->
+            <nav class="tab-nav">
+                <button class="tab-btn active" onclick="showTab('records')">記録一覧</button>
+                <button class="tab-btn" onclick="showTab('export')">エクスポート</button>
+            </nav>
+
+            <!-- 記録一覧タブ -->
+            <section id="records-tab" class="tab-content active">
+                <h2>記録一覧</h2>
+                <div id="records-list" class="records-list">
+                    <!-- 記録がここに表示される -->
+                </div>
+            </section>
+
+            <!-- エクスポートタブ -->
+            <section id="export-tab" class="tab-content">
+                <h2>データエクスポート</h2>
+                <div class="export-options">
+                    <div class="form-group">
+                        <label>エクスポート方法</label>
+                        <div class="radio-group">
+                            <label>
+                                <input type="radio" name="exportType" value="monthly" checked>
+                                月別
+                            </label>
+                            <label>
+                                <input type="radio" name="exportType" value="range">
+                                日付範囲
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="monthly-export" class="export-form">
+                        <div class="form-group">
+                            <label for="exportMonth">対象月</label>
+                            <input type="month" id="exportMonth">
+                        </div>
+                    </div>
+
+                    <div id="range-export" class="export-form" style="display: none;">
+                        <div class="form-group">
+                            <label for="startDate">開始日</label>
+                            <input type="date" id="startDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="endDate">終了日</label>
+                            <input type="date" id="endDate">
+                        </div>
+                    </div>
+
+                    <div class="export-actions">
+                        <button class="btn btn-primary" onclick="exportCSV()">CSVエクスポート</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

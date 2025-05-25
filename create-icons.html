@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>アイコン生成</title>
+</head>
+<body>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    
+    <script>
+        function drawIcon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+            
+            // 背景
+            ctx.fillStyle = '#2196F3';
+            ctx.fillRect(0, 0, size, size);
+            
+            // 白い車のシンボル
+            ctx.fillStyle = '#FFFFFF';
+            const scale = size / 512;
+            
+            // 車体
+            ctx.beginPath();
+            ctx.roundRect(100 * scale, 200 * scale, 312 * scale, 120 * scale, 20 * scale);
+            ctx.fill();
+            
+            // 屋根
+            ctx.beginPath();
+            ctx.moveTo(150 * scale, 200 * scale);
+            ctx.lineTo(180 * scale, 140 * scale);
+            ctx.lineTo(332 * scale, 140 * scale);
+            ctx.lineTo(362 * scale, 200 * scale);
+            ctx.closePath();
+            ctx.fill();
+            
+            // タイヤ
+            ctx.fillStyle = '#1976D2';
+            ctx.beginPath();
+            ctx.arc(170 * scale, 320 * scale, 30 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(342 * scale, 320 * scale, 30 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 位置マーカー
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(256 * scale, 380 * scale, 8 * scale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // ダウンロードリンクの生成
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL();
+            link.textContent = `Download ${size}x${size}`;
+            link.style.display = 'block';
+            link.style.margin = '10px';
+            document.body.appendChild(link);
+        }
+        
+        // アイコンを描画
+        drawIcon(document.getElementById('canvas192'), 192);
+        drawIcon(document.getElementById('canvas512'), 512);
+    </script>
+    
+    <p>上記のリンクをクリックしてアイコンをダウンロードし、icon-192x192.png と icon-512x512.png として保存してください。</p>
+</body>
+</html>
