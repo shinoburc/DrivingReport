@@ -33,7 +33,10 @@
                 </div>
                 <div class="form-group">
                     <label for="gasMeter">ガソリンメーター (km)</label>
-                    <input type="number" id="gasMeter" placeholder="現在のメーター値">
+                    <div class="input-with-camera">
+                        <input type="number" id="gasMeter" placeholder="現在のメーター値">
+                        <button type="button" class="camera-btn" onclick="openCamera()" title="カメラで撮影">📷</button>
+                    </div>
                 </div>
                 <div class="action-buttons">
                     <button class="btn btn-primary" onclick="recordAction('出発')">出発</button>
@@ -44,6 +47,34 @@
                     <div class="progress-content">
                         <div class="spinner"></div>
                         <span>記録中...</span>
+                    </div>
+                </div>
+                <!-- カメラモーダル -->
+                <div id="camera-modal" class="modal" style="display: none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>メーターを撮影</h3>
+                            <button class="close-btn" onclick="closeCamera()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <video id="camera-video" autoplay playsinline></video>
+                            <canvas id="camera-canvas" style="display: none;"></canvas>
+                            <div class="camera-guide">
+                                <p>メーターの数値を撮影してください</p>
+                            </div>
+                            <div class="camera-controls">
+                                <button class="btn btn-primary" onclick="capturePhoto()">撮影</button>
+                                <button class="btn btn-secondary" onclick="closeCamera()">キャンセル</button>
+                            </div>
+                            <div id="ocr-result" style="display: none;">
+                                <h4>認識結果</h4>
+                                <p id="recognized-text"></p>
+                                <div class="ocr-controls">
+                                    <button class="btn btn-primary" onclick="useRecognizedValue()">この値を使用</button>
+                                    <button class="btn btn-secondary" onclick="retakePhoto()">撮り直す</button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -161,7 +192,9 @@
         </main>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="app.js"></script>
+    <script src="camera-ocr.js"></script>
     <script src="install-prompt.js"></script>
 </body>
 </html>
