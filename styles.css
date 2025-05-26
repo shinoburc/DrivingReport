@@ -410,8 +410,8 @@ main {
 .modal-content {
     background-color: white;
     width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
+    max-width: 400px;
+    max-height: 80vh;
     border-radius: 8px;
     overflow: hidden;
     display: flex;
@@ -422,12 +422,13 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
+    padding: 0.75rem;
     border-bottom: 1px solid #e0e0e0;
 }
 
 .modal-header h3 {
     margin: 0;
+    font-size: 1.1rem;
 }
 
 .close-btn {
@@ -444,7 +445,7 @@ main {
 }
 
 .modal-body {
-    padding: 1rem;
+    padding: 0.75rem;
     overflow-y: auto;
     flex: 1;
 }
@@ -452,20 +453,24 @@ main {
 #camera-video {
     width: 100%;
     height: auto;
+    max-height: 30vh;
+    object-fit: cover;
     border-radius: 4px;
+    background-color: #000;
 }
 
 .camera-guide {
     text-align: center;
-    margin: 1rem 0;
+    margin: 0.5rem 0;
     color: #666;
+    font-size: 0.9rem;
 }
 
 .camera-controls {
     display: flex;
     gap: 0.5rem;
     justify-content: center;
-    margin-top: 1rem;
+    margin-top: 0.75rem;
 }
 
 .ocr-progress {
@@ -477,8 +482,8 @@ main {
 }
 
 #ocr-result {
-    margin-top: 1rem;
-    padding: 1rem;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
     background-color: #f5f5f5;
     border-radius: 4px;
     text-align: center;
@@ -486,11 +491,12 @@ main {
 
 #ocr-result h4 {
     margin-bottom: 0.5rem;
+    font-size: 1rem;
 }
 
 #recognized-text {
-    font-size: 1.5rem;
-    margin: 1rem 0;
+    font-size: 1.3rem;
+    margin: 0.5rem 0;
 }
 
 #recognized-text.success {
@@ -506,7 +512,7 @@ main {
     display: flex;
     gap: 0.5rem;
     justify-content: center;
-    margin-top: 1rem;
+    margin-top: 0.75rem;
 }
 
 @media (max-width: 600px) {
@@ -520,5 +526,20 @@ main {
     
     .btn {
         width: 100%;
+    }
+    
+    .modal-content {
+        width: 95%;
+        max-height: 75vh;
+    }
+    
+    #camera-video {
+        max-height: 25vh;
+    }
+    
+    .camera-controls .btn,
+    .ocr-controls .btn {
+        padding: 0.6rem 1rem;
+        font-size: 0.95rem;
     }
 }
