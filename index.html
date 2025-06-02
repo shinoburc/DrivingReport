@@ -38,10 +38,10 @@
                         <button type="button" class="camera-btn" onclick="openCamera()" title="カメラで撮影">📷</button>
                     </div>
                 </div>
-                <div class="action-buttons">
-                    <button class="btn btn-primary" onclick="recordAction('出発')">出発</button>
-                    <button class="btn btn-secondary" onclick="recordAction('経由')">経由</button>
-                    <button class="btn btn-success" onclick="recordAction('到着')">到着</button>
+                <div class="action-buttons" id="action-buttons">
+                    <button class="btn btn-primary" id="departure-btn" onclick="recordAction('departure')" style="display:none;">出発</button>
+                    <button class="btn btn-secondary" id="waypoint-btn" onclick="recordAction('waypoint')" style="display:none;">経由</button>
+                    <button class="btn btn-success" id="arrival-btn" onclick="recordAction('arrival')" style="display:none;">到着</button>
                 </div>
                 <div id="progress" class="progress" style="display: none;">
                     <div class="progress-content">
@@ -183,6 +183,69 @@
                     </div>
                     
                     <button class="btn btn-primary" onclick="createManualRecord()">記録を作成</button>
+                </div>
+                
+                <div class="maintenance-section">
+                    <h3>アクション設定</h3>
+                    <p class="help-text">各アクションボタンの表示設定をカスタマイズできます。</p>
+                    
+                    <div class="action-settings">
+                        <div class="action-setting-item">
+                            <h4>出発</h4>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="departure-visible" checked>
+                                    表示する
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="departure-display-name">表示名</label>
+                                <input type="text" id="departure-display-name" value="出発" placeholder="表示名">
+                            </div>
+                            <div class="form-group">
+                                <label for="departure-action-name">アクション名（記録時）</label>
+                                <input type="text" id="departure-action-name" value="出発" placeholder="アクション名">
+                            </div>
+                        </div>
+                        
+                        <div class="action-setting-item">
+                            <h4>経由</h4>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="waypoint-visible" checked>
+                                    表示する
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="waypoint-display-name">表示名</label>
+                                <input type="text" id="waypoint-display-name" value="経由" placeholder="表示名">
+                            </div>
+                            <div class="form-group">
+                                <label for="waypoint-action-name">アクション名（記録時）</label>
+                                <input type="text" id="waypoint-action-name" value="経由" placeholder="アクション名">
+                            </div>
+                        </div>
+                        
+                        <div class="action-setting-item">
+                            <h4>到着</h4>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="arrival-visible" checked>
+                                    表示する
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label for="arrival-display-name">表示名</label>
+                                <input type="text" id="arrival-display-name" value="到着" placeholder="表示名">
+                            </div>
+                            <div class="form-group">
+                                <label for="arrival-action-name">アクション名（記録時）</label>
+                                <input type="text" id="arrival-action-name" value="到着" placeholder="アクション名">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="saveActionSettings()">設定を保存</button>
                 </div>
                 
                 <div class="maintenance-section danger-zone">

@@ -1,7 +1,16 @@
 let records = [];
+let actionSettings = {
+    departure: { visible: true, displayName: '出発', actionName: '出発' },
+    waypoint: { visible: true, displayName: '経由', actionName: '経由' },
+    arrival: { visible: true, displayName: '到着', actionName: '到着' }
+};
 
 if (localStorage.getItem('drivingRecords')) {
     records = JSON.parse(localStorage.getItem('drivingRecords'));
+}
+
+if (localStorage.getItem('actionSettings')) {
+    actionSettings = JSON.parse(localStorage.getItem('actionSettings'));
 }
 
 window.onload = function() {
@@ -11,6 +20,9 @@ window.onload = function() {
     document.getElementById('endDate').value = now.toISOString().slice(0, 10);
     
     displayRecords();
+    loadActionSettings();
+    applyActionSettings();
+    updateMaintenanceSelectOptions();
     
     document.querySelectorAll('input[name="exportType"]').forEach(radio => {
         radio.addEventListener('change', toggleExportForm);
@@ -30,14 +42,15 @@ function showProgress(show) {
     }
 }
 
-function recordAction(action) {
+function recordAction(actionType) {
     const destination = document.getElementById('destination').value.trim();
     const purpose = document.getElementById('purpose').value.trim();
     const gasMeter = document.getElementById('gasMeter').value.trim();
+    const actionName = actionSettings[actionType].actionName;
     
     // 出発のアクションでは全て必須入力
-    if (action === '出発' && (!destination || !purpose || !gasMeter)) {
-        alert('出発時は行先、目的、ガソリンメーター情報を全て入力してください。');
+    if (actionType === 'departure' && (!destination || !purpose || !gasMeter)) {
+        alert(`${actionSettings.departure.displayName}時は行先、目的、ガソリンメーター情報を全て入力してください。`);
         return;
     }
     
@@ -46,13 +59,13 @@ function recordAction(action) {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
-                saveRecord(action, destination, purpose, gasMeter, position);
+                saveRecord(actionName, destination, purpose, gasMeter, position);
             },
             (error) => {
                 showProgress(false);
                 if (confirm('GPS情報を取得できませんでした。GPS情報なしで記録しますか？')) {
                     showProgress(true);
-                    saveRecord(action, destination, purpose, gasMeter, null);
+                    saveRecord(actionName, destination, purpose, gasMeter, null);
                 }
             }
         );
@@ -60,7 +73,7 @@ function recordAction(action) {
         showProgress(false);
         if (confirm('お使いのブラウザはGPS機能に対応していません。GPS情報なしで記録しますか？')) {
             showProgress(true);
-            saveRecord(action, destination, purpose, gasMeter, null);
+            saveRecord(actionName, destination, purpose, gasMeter, null);
         }
     }
 }
@@ -346,7 +359,7 @@ function createManualRecord() {
     }
     
     if (action === '出発' && (!destination || !purpose || !gasMeter)) {
-        alert('出発時は行先、目的、ガソリンメーター情報を全て入力してください。');
+        alert(`${actionSettings.departure.displayName}時は行在、目的、ガソリンメーター情報を全て入力してください。`);
         return;
     }
     
@@ -436,4 +449,104 @@ if ('serviceWorker' in navigator) {
             .then(registration => console.log('ServiceWorker registration successful'))
             .catch(err => console.log('ServiceWorker registration failed: ', err));
     });
+}
+
+function loadActionSettings() {
+    // 設定を読み込んでUIに反映
+    if (document.getElementById('departure-visible')) {
+        document.getElementById('departure-visible').checked = actionSettings.departure.visible;
+        document.getElementById('departure-display-name').value = actionSettings.departure.displayName;
+        document.getElementById('departure-action-name').value = actionSettings.departure.actionName;
+        
+        document.getElementById('waypoint-visible').checked = actionSettings.waypoint.visible;
+        document.getElementById('waypoint-display-name').value = actionSettings.waypoint.displayName;
+        document.getElementById('waypoint-action-name').value = actionSettings.waypoint.actionName;
+        
+        document.getElementById('arrival-visible').checked = actionSettings.arrival.visible;
+        document.getElementById('arrival-display-name').value = actionSettings.arrival.displayName;
+        document.getElementById('arrival-action-name').value = actionSettings.arrival.actionName;
+    }
+}
+
+function saveActionSettings() {
+    // UIから設定を取得
+    actionSettings = {
+        departure: {
+            visible: document.getElementById('departure-visible').checked,
+            displayName: document.getElementById('departure-display-name').value || '出発',
+            actionName: document.getElementById('departure-action-name').value || '出発'
+        },
+        waypoint: {
+            visible: document.getElementById('waypoint-visible').checked,
+            displayName: document.getElementById('waypoint-display-name').value || '経由',
+            actionName: document.getElementById('waypoint-action-name').value || '経由'
+        },
+        arrival: {
+            visible: document.getElementById('arrival-visible').checked,
+            displayName: document.getElementById('arrival-display-name').value || '到着',
+            actionName: document.getElementById('arrival-action-name').value || '到着'
+        }
+    };
+    
+    // localStorageに保存
+    localStorage.setItem('actionSettings', JSON.stringify(actionSettings));
+    
+    // 設定を適用
+    applyActionSettings();
+    
+    // メンテナンスタブのセレクトボックスも更新
+    updateMaintenanceSelectOptions();
+    
+    alert('設定を保存しました。');
+}
+
+function applyActionSettings() {
+    // ボタンの表示/非表示とテキストを更新
+    const departureBtn = document.getElementById('departure-btn');
+    const waypointBtn = document.getElementById('waypoint-btn');
+    const arrivalBtn = document.getElementById('arrival-btn');
+    
+    if (departureBtn) {
+        departureBtn.style.display = actionSettings.departure.visible ? 'inline-block' : 'none';
+        departureBtn.textContent = actionSettings.departure.displayName;
+    }
+    
+    if (waypointBtn) {
+        waypointBtn.style.display = actionSettings.waypoint.visible ? 'inline-block' : 'none';
+        waypointBtn.textContent = actionSettings.waypoint.displayName;
+    }
+    
+    if (arrivalBtn) {
+        arrivalBtn.style.display = actionSettings.arrival.visible ? 'inline-block' : 'none';
+        arrivalBtn.textContent = actionSettings.arrival.displayName;
+    }
+}
+
+function updateMaintenanceSelectOptions() {
+    const select = document.getElementById('manual-action');
+    if (select) {
+        select.innerHTML = '';
+        
+        // 表示設定に基づいてオプションを追加
+        if (actionSettings.departure.visible) {
+            const option = document.createElement('option');
+            option.value = actionSettings.departure.actionName;
+            option.textContent = actionSettings.departure.displayName;
+            select.appendChild(option);
+        }
+        
+        if (actionSettings.waypoint.visible) {
+            const option = document.createElement('option');
+            option.value = actionSettings.waypoint.actionName;
+            option.textContent = actionSettings.waypoint.displayName;
+            select.appendChild(option);
+        }
+        
+        if (actionSettings.arrival.visible) {
+            const option = document.createElement('option');
+            option.value = actionSettings.arrival.actionName;
+            option.textContent = actionSettings.arrival.displayName;
+            select.appendChild(option);
+        }
+    }
 }

@@ -533,6 +533,27 @@ main {
     color: #999;
 }
 
+.action-setting-item {
+    background-color: #fff;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.action-setting-item h4 {
+    margin-bottom: 0.75rem;
+    color: #333;
+    font-size: 1rem;
+}
+
+.action-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
 @media (max-width: 600px) {
     .container {
         max-width: 100%;
