@@ -1,7 +1,7 @@
 let records = [];
 let actionSettings = {
     departure: { visible: true, displayName: '出発', actionName: '出発' },
-    waypoint: { visible: true, displayName: '経由', actionName: '経由' },
+    waypoint: { visible: false, displayName: '経由', actionName: '経由' },
     arrival: { visible: true, displayName: '到着', actionName: '到着' }
 };
 
@@ -548,5 +548,26 @@ function updateMaintenanceSelectOptions() {
             option.textContent = actionSettings.arrival.displayName;
             select.appendChild(option);
         }
+    }
+}
+
+function resetActionSettings() {
+    if (confirm('アクション設定をデフォルトに戻しますか？')) {
+        // デフォルト設定に戻す
+        actionSettings = {
+            departure: { visible: true, displayName: '出発', actionName: '出発' },
+            waypoint: { visible: false, displayName: '経由', actionName: '経由' },
+            arrival: { visible: true, displayName: '到着', actionName: '到着' }
+        };
+        
+        // localStorageに保存
+        localStorage.setItem('actionSettings', JSON.stringify(actionSettings));
+        
+        // UIに反映
+        loadActionSettings();
+        applyActionSettings();
+        updateMaintenanceSelectOptions();
+        
+        alert('設定をデフォルトに戻しました。');
     }
 }
