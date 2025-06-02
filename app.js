@@ -130,6 +130,7 @@ function displayRecords() {
                     <span class="record-action">${record.action}</span>
                     <div class="record-header-right">
                         <span class="record-datetime">${dateStr} ${timeStr}</span>
+                        <button class="edit-btn" onclick="editRecord(${record.id})" title="編集">✏️</button>
                         <button class="delete-btn" onclick="deleteRecord(${record.id})" title="削除">×</button>
                     </div>
                 </div>
@@ -570,4 +571,110 @@ function resetActionSettings() {
         
         alert('設定をデフォルトに戻しました。');
     }
+}
+
+function editRecord(id) {
+    const record = records.find(r => r.id === id);
+    if (!record) return;
+    
+    // モーダルを表示
+    const modal = document.getElementById('edit-modal');
+    modal.style.display = 'flex';
+    
+    // フォームに既存の値をセット
+    document.getElementById('edit-record-id').value = record.id;
+    
+    // 日時をdatetime-local形式に変換
+    const date = new Date(record.datetime);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    document.getElementById('edit-datetime').value = date.toISOString().slice(0, 16);
+    
+    // アクションのセレクトボックスを更新
+    updateEditActionOptions();
+    document.getElementById('edit-action').value = record.action;
+    
+    document.getElementById('edit-destination').value = record.destination || '';
+    document.getElementById('edit-purpose').value = record.purpose || '';
+    document.getElementById('edit-gasMeter').value = record.gasMeter || '';
+    
+    // GPS座標
+    if (record.location) {
+        document.getElementById('edit-gps').value = `${record.location.latitude}, ${record.location.longitude}`;
+    } else {
+        document.getElementById('edit-gps').value = 'GPS未取得';
+    }
+}
+
+function updateEditActionOptions() {
+    const select = document.getElementById('edit-action');
+    select.innerHTML = '<option value="">選択してください</option>';
+    
+    // 全てのアクションを表示（現在の表示設定に関わらず）
+    const allActions = [
+        { name: 'departure', settings: actionSettings.departure },
+        { name: 'waypoint', settings: actionSettings.waypoint },
+        { name: 'arrival', settings: actionSettings.arrival }
+    ];
+    
+    allActions.forEach(action => {
+        const option = document.createElement('option');
+        option.value = action.settings.actionName;
+        option.textContent = action.settings.displayName;
+        select.appendChild(option);
+    });
+}
+
+function closeEditModal() {
+    document.getElementById('edit-modal').style.display = 'none';
+    document.getElementById('edit-form').reset();
+}
+
+function saveEditedRecord() {
+    const id = parseInt(document.getElementById('edit-record-id').value);
+    const recordIndex = records.findIndex(r => r.id === id);
+    
+    if (recordIndex === -1) {
+        alert('記録が見つかりません。');
+        return;
+    }
+    
+    const datetime = document.getElementById('edit-datetime').value;
+    const action = document.getElementById('edit-action').value;
+    const destination = document.getElementById('edit-destination').value.trim();
+    const purpose = document.getElementById('edit-purpose').value.trim();
+    const gasMeter = document.getElementById('edit-gasMeter').value.trim();
+    
+    // 必須チェック
+    if (!datetime || !action) {
+        alert('日時とアクションは必須です。');
+        return;
+    }
+    
+    // 出発のアクションでは全て必須入力
+    if (action === actionSettings.departure.actionName && (!destination || !purpose || !gasMeter)) {
+        alert(`${actionSettings.departure.displayName}時は行先、目的、ガソリンメーター情報を全て入力してください。`);
+        return;
+    }
+    
+    // 記録を更新
+    records[recordIndex] = {
+        ...records[recordIndex],
+        datetime: new Date(datetime).toISOString(),
+        action: action,
+        destination: destination,
+        purpose: purpose,
+        gasMeter: gasMeter ? parseFloat(gasMeter) : null
+    };
+    
+    // ソート
+    records.sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+    
+    // 保存
+    localStorage.setItem('drivingRecords', JSON.stringify(records));
+    
+    // 表示を更新
+    displayRecords();
+    closeEditModal();
+    
+    alert('記録を更新しました。');
 }
