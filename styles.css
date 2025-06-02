@@ -258,6 +258,28 @@ main {
     font-size: 1.1rem;
 }
 
+.edit-btn {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+    padding: 0;
+    line-height: 1;
+    margin-right: 0.25rem;
+}
+
+.edit-btn:hover {
+    background-color: #1976D2;
+}
+
 .delete-btn {
     background-color: #f44336;
     color: white;
@@ -558,6 +580,13 @@ main {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
 }
 
 @media (max-width: 600px) {

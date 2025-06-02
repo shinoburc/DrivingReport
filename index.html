@@ -261,6 +261,59 @@
         </main>
     </div>
 
+    <!-- 編集モーダル -->
+    <div id="edit-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>記録を編集</h3>
+                <button class="close-btn" onclick="closeEditModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-record-id">
+                    
+                    <div class="form-group">
+                        <label for="edit-datetime">日時</label>
+                        <input type="datetime-local" id="edit-datetime" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-action">アクション</label>
+                        <select id="edit-action" required>
+                            <option value="">選択してください</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-destination">行先</label>
+                        <input type="text" id="edit-destination" placeholder="訪問先・目的地を入力">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-purpose">目的</label>
+                        <input type="text" id="edit-purpose" placeholder="訪問の目的を入力">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-gasMeter">ガソリンメーター (km)</label>
+                        <input type="number" id="edit-gasMeter" placeholder="メーター値">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="edit-gps">GPS座標</label>
+                        <input type="text" id="edit-gps" placeholder="例: 35.6812, 139.7671" readonly>
+                        <small class="help-text">GPS座標は編集できません</small>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-primary" onclick="saveEditedRecord()">保存</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">キャンセル</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="app.js"></script>
     <script src="camera-ocr.js"></script>
