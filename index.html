@@ -61,6 +61,7 @@
                             <canvas id="camera-canvas" style="display: none;"></canvas>
                             <div class="camera-guide">
                                 <p>メーターの数値を撮影してください</p>
+                                <small>ヒント: 明るい場所で、数字がはっきり見えるように撮影してください</small>
                             </div>
                             <div class="camera-controls">
                                 <button class="btn btn-primary" onclick="capturePhoto()">撮影</button>
@@ -69,8 +70,10 @@
                             <div id="ocr-result" style="display: none;">
                                 <h4>認識結果</h4>
                                 <p id="recognized-text"></p>
+                                <input type="number" id="manual-correction" placeholder="手動で修正" style="display: none;">
                                 <div class="ocr-controls">
                                     <button class="btn btn-primary" onclick="useRecognizedValue()">この値を使用</button>
+                                    <button class="btn btn-secondary" onclick="showManualInput()">手動で入力</button>
                                     <button class="btn btn-secondary" onclick="retakePhoto()">撮り直す</button>
                                 </div>
                             </div>

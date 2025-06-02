@@ -513,6 +513,24 @@ main {
     gap: 0.5rem;
     justify-content: center;
     margin-top: 0.75rem;
+    flex-wrap: wrap;
+}
+
+#manual-correction {
+    width: 100%;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border: 2px solid #2196F3;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.camera-guide small {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: #999;
 }
 
 @media (max-width: 600px) {
