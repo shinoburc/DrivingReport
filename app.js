@@ -897,3 +897,84 @@ async function decryptAES256GCM(encryptedBase64, passphrase) {
         return null;
     }
 }
+
+// 復号化モーダル関連の関数
+function showDecryptModal() {
+    document.getElementById('decrypt-modal').style.display = 'block';
+    document.getElementById('decrypt-passphrase').value = '';
+    document.getElementById('encrypted-data').value = '';
+    document.getElementById('decrypted-result').style.display = 'none';
+    document.getElementById('decrypted-data').value = '';
+}
+
+function closeDecryptModal() {
+    document.getElementById('decrypt-modal').style.display = 'none';
+}
+
+async function decryptData() {
+    const passphrase = document.getElementById('decrypt-passphrase').value;
+    const encryptedData = document.getElementById('encrypted-data').value.trim();
+    
+    if (!passphrase) {
+        alert('パスフレーズを入力してください。');
+        return;
+    }
+    
+    if (!encryptedData) {
+        alert('暗号化されたデータを入力してください。');
+        return;
+    }
+    
+    try {
+        // 復号化を実行
+        const decryptedData = await decryptAES256GCM(encryptedData, passphrase);
+        
+        if (decryptedData) {
+            document.getElementById('decrypted-data').value = decryptedData;
+            document.getElementById('decrypted-result').style.display = 'block';
+        } else {
+            alert('復号化に失敗しました。パスフレーズが正しいか確認してください。');
+        }
+    } catch (error) {
+        alert('復号化中にエラーが発生しました。');
+        console.error('復号化エラー:', error);
+    }
+}
+
+function copyDecryptedData() {
+    const decryptedData = document.getElementById('decrypted-data');
+    decryptedData.select();
+    decryptedData.setSelectionRange(0, 99999); // モバイル対応
+    
+    try {
+        document.execCommand('copy');
+        alert('復号化されたデータをコピーしました。');
+    } catch (err) {
+        alert('コピーに失敗しました。手動でコピーしてください。');
+    }
+}
+
+function downloadDecryptedData() {
+    const decryptedData = document.getElementById('decrypted-data').value;
+    if (!decryptedData) {
+        alert('復号化されたデータがありません。');
+        return;
+    }
+    
+    const blob = new Blob([decryptedData], { type: 'text/csv;charset=utf-8;' });
+    const fileName = `復号化済み_運転日報_${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadFile(blob, fileName);
+}
+
+// モーダルの外側をクリックしたら閉じる
+window.onclick = function(event) {
+    const editModal = document.getElementById('edit-modal');
+    const decryptModal = document.getElementById('decrypt-modal');
+    
+    if (event.target === editModal) {
+        closeEditModal();
+    }
+    if (event.target === decryptModal) {
+        closeDecryptModal();
+    }
+}
