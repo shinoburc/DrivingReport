@@ -287,7 +287,7 @@ function downloadFile(blob, fileName) {
     document.body.removeChild(a);
 }
 
-function exportAndEmail() {
+async function exportAndEmail() {
     // メールアドレスが設定されているか確認
     const recipientEmail = localStorage.getItem('recipientEmail');
     if (!recipientEmail) {
@@ -349,8 +349,13 @@ function exportAndEmail() {
     let bodyContent;
     if (encryptOnEmail && passphrase) {
         // CSVデータを暗号化
-        const encryptedData = simpleEncrypt(csv, passphrase);
-        bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、暗号化されたCSVデータ：\n（パスフレーズで復号化してください）\n\n${encryptedData}`;
+        const encryptedData = await encryptAES256GCM(csv, passphrase);
+        if (encryptedData) {
+            bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、AES-256-GCMで暗号化されたCSVデータ：\n（パスフレーズで復号化してください）\n\n${encryptedData}`;
+        } else {
+            alert('暗号化に失敗しました。暗号化せずに送信します。');
+            bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`;
+        }
     } else {
         // 暗号化しない場合は通常通り
         bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`;
@@ -800,32 +805,95 @@ function saveEncryptionSetting() {
     console.log('暗号化設定を保存しました:', encryptOnEmail);
 }
 
-// 簡易暗号化関数（XOR暗号）
-function simpleEncrypt(text, passphrase) {
-    let encrypted = '';
-    for (let i = 0; i < text.length; i++) {
-        const charCode = text.charCodeAt(i);
-        const keyChar = passphrase.charCodeAt(i % passphrase.length);
-        const encryptedChar = charCode ^ keyChar;
-        encrypted += String.fromCharCode(encryptedChar);
+// AES-256-GCM暗号化関数
+async function encryptAES256GCM(text, passphrase) {
+    try {
+        // パスフレーズからキーを生成
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        
+        // パスフレーズをハッシュ化してキーマテリアルとして使用
+        const keyMaterial = await crypto.subtle.digest(
+            'SHA-256',
+            encoder.encode(passphrase)
+        );
+        
+        // AESキーをインポート
+        const key = await crypto.subtle.importKey(
+            'raw',
+            keyMaterial,
+            { name: 'AES-GCM' },
+            false,
+            ['encrypt']
+        );
+        
+        // ランダムなIV（初期化ベクトル）を生成
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        
+        // 暗号化
+        const encrypted = await crypto.subtle.encrypt(
+            {
+                name: 'AES-GCM',
+                iv: iv
+            },
+            key,
+            data
+        );
+        
+        // IVと暗号化データを結合
+        const combined = new Uint8Array(iv.length + encrypted.byteLength);
+        combined.set(iv, 0);
+        combined.set(new Uint8Array(encrypted), iv.length);
+        
+        // Base64エンコード
+        return btoa(String.fromCharCode(...combined));
+    } catch (error) {
+        console.error('暗号化エラー:', error);
+        return null;
     }
-    // Base64エンコードして返す
-    return btoa(unescape(encodeURIComponent(encrypted)));
 }
 
-// 簡易復号化関数（XOR暗号）
-function simpleDecrypt(encryptedBase64, passphrase) {
+// AES-256-GCM復号化関数
+async function decryptAES256GCM(encryptedBase64, passphrase) {
     try {
-        const encrypted = decodeURIComponent(escape(atob(encryptedBase64)));
-        let decrypted = '';
-        for (let i = 0; i < encrypted.length; i++) {
-            const charCode = encrypted.charCodeAt(i);
-            const keyChar = passphrase.charCodeAt(i % passphrase.length);
-            const decryptedChar = charCode ^ keyChar;
-            decrypted += String.fromCharCode(decryptedChar);
-        }
-        return decrypted;
-    } catch (e) {
+        // Base64デコード
+        const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+        
+        // IVと暗号化データを分離
+        const iv = combined.slice(0, 12);
+        const encrypted = combined.slice(12);
+        
+        // パスフレーズからキーを生成
+        const encoder = new TextEncoder();
+        const keyMaterial = await crypto.subtle.digest(
+            'SHA-256',
+            encoder.encode(passphrase)
+        );
+        
+        // AESキーをインポート
+        const key = await crypto.subtle.importKey(
+            'raw',
+            keyMaterial,
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt']
+        );
+        
+        // 復号化
+        const decrypted = await crypto.subtle.decrypt(
+            {
+                name: 'AES-GCM',
+                iv: iv
+            },
+            key,
+            encrypted
+        );
+        
+        // テキストに変換
+        const decoder = new TextDecoder();
+        return decoder.decode(decrypted);
+    } catch (error) {
+        console.error('復号化エラー:', error);
         return null;
     }
 }
