@@ -180,7 +180,7 @@ function showTab(tabName) {
         document.getElementById('manual-datetime').value = now.toISOString().slice(0, 16);
         // パスフレーズを表示
         displayPassphrase();
-        // メールアドレスを表示
+        // メールアドレスと暗号化設定を表示
         loadEmailSettings();
     }
 }
@@ -341,12 +341,23 @@ function exportAndEmail() {
     const csv = generateCSV(filteredRecords);
     const fileName = `運転日報_${periodText.replace(/[\/\s～]/g, '_')}.csv`;
     
+    // 暗号化設定を確認
+    const encryptOnEmail = localStorage.getItem('encryptOnEmail') === 'true';
+    const passphrase = localStorage.getItem('appPassphrase');
+    
+    let bodyContent;
+    if (encryptOnEmail && passphrase) {
+        // CSVデータを暗号化
+        const encryptedData = simpleEncrypt(csv, passphrase);
+        bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、暗号化されたCSVデータ：\n（パスフレーズで復号化してください）\n\n${encryptedData}`;
+    } else {
+        // 暗号化しない場合は通常通り
+        bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`;
+    }
+    
     // メールアプリを開く
     const subject = encodeURIComponent(`運転日報 ${periodText}`);
-    const body = encodeURIComponent(`運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`);
-    
-    // データURIスキームでCSVを作成
-    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    const body = encodeURIComponent(bodyContent);
     
     // まずCSVをダウンロード
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -748,6 +759,15 @@ function loadEmailSettings() {
     if (email) {
         document.getElementById('recipient-email').value = email;
     }
+    
+    // 暗号化設定を読み込む（デフォルトはtrue）
+    const encryptOnEmail = localStorage.getItem('encryptOnEmail');
+    if (encryptOnEmail !== null) {
+        document.getElementById('encrypt-on-email').checked = encryptOnEmail === 'true';
+    } else {
+        // 初回はデフォルトでオン
+        document.getElementById('encrypt-on-email').checked = true;
+    }
 }
 
 function saveEmailSettings() {
@@ -770,4 +790,41 @@ function saveEmailSettings() {
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
+}
+
+// 暗号化設定を即時保存
+function saveEncryptionSetting() {
+    const encryptOnEmail = document.getElementById('encrypt-on-email').checked;
+    localStorage.setItem('encryptOnEmail', encryptOnEmail);
+    console.log('暗号化設定を保存しました:', encryptOnEmail);
+}
+
+// 簡易暗号化関数（XOR暗号）
+function simpleEncrypt(text, passphrase) {
+    let encrypted = '';
+    for (let i = 0; i < text.length; i++) {
+        const charCode = text.charCodeAt(i);
+        const keyChar = passphrase.charCodeAt(i % passphrase.length);
+        const encryptedChar = charCode ^ keyChar;
+        encrypted += String.fromCharCode(encryptedChar);
+    }
+    // Base64エンコードして返す
+    return btoa(unescape(encodeURIComponent(encrypted)));
+}
+
+// 簡易復号化関数（XOR暗号）
+function simpleDecrypt(encryptedBase64, passphrase) {
+    try {
+        const encrypted = decodeURIComponent(escape(atob(encryptedBase64)));
+        let decrypted = '';
+        for (let i = 0; i < encrypted.length; i++) {
+            const charCode = encrypted.charCodeAt(i);
+            const keyChar = passphrase.charCodeAt(i % passphrase.length);
+            const decryptedChar = charCode ^ keyChar;
+            decrypted += String.fromCharCode(decryptedChar);
+        }
+        return decrypted;
+    } catch (e) {
+        return null;
+    }
 }
