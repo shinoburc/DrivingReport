@@ -23,6 +23,7 @@ window.onload = function() {
     loadActionSettings();
     applyActionSettings();
     updateMaintenanceSelectOptions();
+    initializePassphrase();
     
     document.querySelectorAll('input[name="exportType"]').forEach(radio => {
         radio.addEventListener('change', toggleExportForm);
@@ -177,6 +178,10 @@ function showTab(tabName) {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('manual-datetime').value = now.toISOString().slice(0, 16);
+        // パスフレーズを表示
+        displayPassphrase();
+        // メールアドレスと暗号化設定を表示
+        loadEmailSettings();
     }
 }
 
@@ -282,7 +287,15 @@ function downloadFile(blob, fileName) {
     document.body.removeChild(a);
 }
 
-function exportAndEmail() {
+async function exportAndEmail() {
+    // メールアドレスが設定されているか確認
+    const recipientEmail = localStorage.getItem('recipientEmail');
+    if (!recipientEmail) {
+        alert('送信先メールアドレスが設定されていません。\nメンテナンス画面で送信先メールアドレスを設定してください。');
+        showTab('maintenance');
+        return;
+    }
+    
     const exportType = document.querySelector('input[name="exportType"]:checked').value;
     let filteredRecords = [];
     let periodText = '';
@@ -328,20 +341,37 @@ function exportAndEmail() {
     const csv = generateCSV(filteredRecords);
     const fileName = `運転日報_${periodText.replace(/[\/\s～]/g, '_')}.csv`;
     
+    // 暗号化設定を確認（初回はデフォルトでtrue）
+    const encryptOnEmailSetting = localStorage.getItem('encryptOnEmail');
+    const encryptOnEmail = encryptOnEmailSetting === null ? true : encryptOnEmailSetting === 'true';
+    const passphrase = localStorage.getItem('appPassphrase');
+    
+    let bodyContent;
+    if (encryptOnEmail && passphrase) {
+        // CSVデータを暗号化
+        const encryptedData = await encryptAES256GCM(csv, passphrase);
+        if (encryptedData) {
+            bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、AES-256-GCMで暗号化されたCSVデータ：\n（パスフレーズで復号化してください）\n\n${encryptedData}`;
+        } else {
+            alert('暗号化に失敗しました。暗号化せずに送信します。');
+            bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`;
+        }
+    } else {
+        // 暗号化しない場合は通常通り
+        bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`;
+    }
+    
     // メールアプリを開く
     const subject = encodeURIComponent(`運転日報 ${periodText}`);
-    const body = encodeURIComponent(`運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`);
-    
-    // データURIスキームでCSVを作成
-    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    const body = encodeURIComponent(bodyContent);
     
     // まずCSVをダウンロード
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     downloadFile(blob, fileName);
     
-    // 少し遅らせてメールアプリを開く
+    // 少し遅らせてメールアプリを開く（宛先に送信先メールアドレスを設定）
     setTimeout(() => {
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        window.location.href = `mailto:${encodeURIComponent(recipientEmail)}?subject=${subject}&body=${body}`;
     }, 500);
 }
 
@@ -677,4 +707,274 @@ function saveEditedRecord() {
     closeEditModal();
     
     alert('記録を更新しました。');
+}
+
+// パスフレーズ関連の関数
+function generatePassphrase() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let passphrase = '';
+    
+    // 8文字のランダム文字列を生成
+    for (let i = 0; i < 8; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        passphrase += characters[randomIndex];
+    }
+    
+    return passphrase;
+}
+
+function initializePassphrase() {
+    if (!localStorage.getItem('appPassphrase')) {
+        const passphrase = generatePassphrase();
+        localStorage.setItem('appPassphrase', passphrase);
+    }
+}
+
+function displayPassphrase() {
+    const passphrase = localStorage.getItem('appPassphrase');
+    if (passphrase) {
+        document.getElementById('passphrase-display').value = passphrase;
+    }
+}
+
+function copyPassphrase() {
+    const passphraseInput = document.getElementById('passphrase-display');
+    passphraseInput.select();
+    passphraseInput.setSelectionRange(0, 99999); // モバイル対応
+    
+    try {
+        document.execCommand('copy');
+        alert('パスフレーズをコピーしました。');
+    } catch (err) {
+        alert('コピーに失敗しました。手動でコピーしてください。');
+    }
+}
+
+function regeneratePassphrase() {
+    if (confirm('現在のパスフレーズを破棄して新しいパスフレーズを生成しますか？この操作は取り消せません。')) {
+        const newPassphrase = generatePassphrase();
+        localStorage.setItem('appPassphrase', newPassphrase);
+        displayPassphrase();
+        alert('新しいパスフレーズを生成しました。');
+    }
+}
+
+// メールアドレス設定関連の関数
+function loadEmailSettings() {
+    const email = localStorage.getItem('recipientEmail');
+    if (email) {
+        document.getElementById('recipient-email').value = email;
+    }
+    
+    // 暗号化設定を読み込む（デフォルトはtrue）
+    const encryptOnEmail = localStorage.getItem('encryptOnEmail');
+    if (encryptOnEmail !== null) {
+        document.getElementById('encrypt-on-email').checked = encryptOnEmail === 'true';
+    } else {
+        // 初回はデフォルトでオン
+        document.getElementById('encrypt-on-email').checked = true;
+    }
+}
+
+function saveEmailSettings() {
+    const email = document.getElementById('recipient-email').value.trim();
+    
+    if (email && !isValidEmail(email)) {
+        alert('有効なメールアドレスを入力してください。');
+        return;
+    }
+    
+    if (email) {
+        localStorage.setItem('recipientEmail', email);
+        alert('メール設定を保存しました。');
+    } else {
+        localStorage.removeItem('recipientEmail');
+        alert('メール設定をクリアしました。');
+    }
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// 暗号化設定を即時保存
+function saveEncryptionSetting() {
+    const encryptOnEmail = document.getElementById('encrypt-on-email').checked;
+    localStorage.setItem('encryptOnEmail', encryptOnEmail);
+    console.log('暗号化設定を保存しました:', encryptOnEmail);
+}
+
+// AES-256-GCM暗号化関数
+async function encryptAES256GCM(text, passphrase) {
+    try {
+        // パスフレーズからキーを生成
+        const encoder = new TextEncoder();
+        const data = encoder.encode(text);
+        
+        // パスフレーズをハッシュ化してキーマテリアルとして使用
+        const keyMaterial = await crypto.subtle.digest(
+            'SHA-256',
+            encoder.encode(passphrase)
+        );
+        
+        // AESキーをインポート
+        const key = await crypto.subtle.importKey(
+            'raw',
+            keyMaterial,
+            { name: 'AES-GCM' },
+            false,
+            ['encrypt']
+        );
+        
+        // ランダムなIV（初期化ベクトル）を生成
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        
+        // 暗号化
+        const encrypted = await crypto.subtle.encrypt(
+            {
+                name: 'AES-GCM',
+                iv: iv
+            },
+            key,
+            data
+        );
+        
+        // IVと暗号化データを結合
+        const combined = new Uint8Array(iv.length + encrypted.byteLength);
+        combined.set(iv, 0);
+        combined.set(new Uint8Array(encrypted), iv.length);
+        
+        // Base64エンコード
+        return btoa(String.fromCharCode(...combined));
+    } catch (error) {
+        console.error('暗号化エラー:', error);
+        return null;
+    }
+}
+
+// AES-256-GCM復号化関数
+async function decryptAES256GCM(encryptedBase64, passphrase) {
+    try {
+        // Base64デコード
+        const combined = Uint8Array.from(atob(encryptedBase64), c => c.charCodeAt(0));
+        
+        // IVと暗号化データを分離
+        const iv = combined.slice(0, 12);
+        const encrypted = combined.slice(12);
+        
+        // パスフレーズからキーを生成
+        const encoder = new TextEncoder();
+        const keyMaterial = await crypto.subtle.digest(
+            'SHA-256',
+            encoder.encode(passphrase)
+        );
+        
+        // AESキーをインポート
+        const key = await crypto.subtle.importKey(
+            'raw',
+            keyMaterial,
+            { name: 'AES-GCM' },
+            false,
+            ['decrypt']
+        );
+        
+        // 復号化
+        const decrypted = await crypto.subtle.decrypt(
+            {
+                name: 'AES-GCM',
+                iv: iv
+            },
+            key,
+            encrypted
+        );
+        
+        // テキストに変換
+        const decoder = new TextDecoder();
+        return decoder.decode(decrypted);
+    } catch (error) {
+        console.error('復号化エラー:', error);
+        return null;
+    }
+}
+
+// 復号化モーダル関連の関数
+function showDecryptModal() {
+    document.getElementById('decrypt-modal').style.display = 'block';
+    document.getElementById('decrypt-passphrase').value = '';
+    document.getElementById('encrypted-data').value = '';
+    document.getElementById('decrypted-result').style.display = 'none';
+    document.getElementById('decrypted-data').value = '';
+}
+
+function closeDecryptModal() {
+    document.getElementById('decrypt-modal').style.display = 'none';
+}
+
+async function decryptData() {
+    const passphrase = document.getElementById('decrypt-passphrase').value;
+    const encryptedData = document.getElementById('encrypted-data').value.trim();
+    
+    if (!passphrase) {
+        alert('パスフレーズを入力してください。');
+        return;
+    }
+    
+    if (!encryptedData) {
+        alert('暗号化されたデータを入力してください。');
+        return;
+    }
+    
+    try {
+        // 復号化を実行
+        const decryptedData = await decryptAES256GCM(encryptedData, passphrase);
+        
+        if (decryptedData) {
+            document.getElementById('decrypted-data').value = decryptedData;
+            document.getElementById('decrypted-result').style.display = 'block';
+        } else {
+            alert('復号化に失敗しました。パスフレーズが正しいか確認してください。');
+        }
+    } catch (error) {
+        alert('復号化中にエラーが発生しました。');
+        console.error('復号化エラー:', error);
+    }
+}
+
+function copyDecryptedData() {
+    const decryptedData = document.getElementById('decrypted-data');
+    decryptedData.select();
+    decryptedData.setSelectionRange(0, 99999); // モバイル対応
+    
+    try {
+        document.execCommand('copy');
+        alert('復号化されたデータをコピーしました。');
+    } catch (err) {
+        alert('コピーに失敗しました。手動でコピーしてください。');
+    }
+}
+
+function downloadDecryptedData() {
+    const decryptedData = document.getElementById('decrypted-data').value;
+    if (!decryptedData) {
+        alert('復号化されたデータがありません。');
+        return;
+    }
+    
+    const blob = new Blob([decryptedData], { type: 'text/csv;charset=utf-8;' });
+    const fileName = `復号化済み_運転日報_${new Date().toISOString().slice(0, 10)}.csv`;
+    downloadFile(blob, fileName);
+}
+
+// モーダルの外側をクリックしたら閉じる
+window.onclick = function(event) {
+    const editModal = document.getElementById('edit-modal');
+    const decryptModal = document.getElementById('decrypt-modal');
+    
+    if (event.target === editModal) {
+        closeEditModal();
+    }
+    if (event.target === decryptModal) {
+        closeDecryptModal();
+    }
 }

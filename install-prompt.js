@@ -1,6 +1,7 @@
 // PWAインストールプロンプトの処理
 let deferredPrompt;
 let installButton = null;
+let buttonContainer = null;
 
 window.addEventListener('beforeinstallprompt', (e) => {
     // デフォルトのプロンプトを防ぐ
@@ -8,26 +9,57 @@ window.addEventListener('beforeinstallprompt', (e) => {
     // 後で使用できるように保存
     deferredPrompt = e;
     
-    // インストールボタンを作成（まだ存在しない場合）
-    if (!installButton) {
-        createInstallButton();
+    // ボタンコンテナを作成（まだ存在しない場合）
+    if (!buttonContainer) {
+        createButtonContainer();
     }
     
     // インストールボタンを表示
     if (installButton) {
-        installButton.style.display = 'block';
+        installButton.style.display = 'inline-block';
     }
 });
 
-function createInstallButton() {
+function createButtonContainer() {
+    // ボタンコンテナを作成
+    buttonContainer = document.createElement('div');
+    buttonContainer.className = 'floating-button-container';
+    buttonContainer.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        gap: 10px;
+        z-index: 1000;
+        flex-direction: column;
+        align-items: flex-end;
+    `;
+    
+    // 復号化ツールボタンを作成
+    const decryptButton = document.createElement('button');
+    decryptButton.textContent = '復号化ツールを起動';
+    decryptButton.className = 'decrypt-tool-button';
+    decryptButton.style.cssText = `
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 24px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    `;
+    
+    decryptButton.addEventListener('click', () => {
+        showDecryptModal();
+    });
+    
     // インストールボタンを作成
     installButton = document.createElement('button');
     installButton.textContent = 'アプリをインストール';
     installButton.className = 'install-button';
     installButton.style.cssText = `
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
         background-color: #2196F3;
         color: white;
         border: none;
@@ -37,7 +69,6 @@ function createInstallButton() {
         font-weight: 500;
         cursor: pointer;
         box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        z-index: 1000;
         display: none;
     `;
     
@@ -62,9 +93,20 @@ function createInstallButton() {
         }
     });
     
-    // ボタンをページに追加
-    document.body.appendChild(installButton);
+    // ボタンをコンテナに追加
+    buttonContainer.appendChild(decryptButton);
+    buttonContainer.appendChild(installButton);
+    
+    // コンテナをページに追加
+    document.body.appendChild(buttonContainer);
 }
+
+// ページ読み込み時に復号化ツールボタンだけを表示
+window.addEventListener('DOMContentLoaded', () => {
+    if (!buttonContainer) {
+        createButtonContainer();
+    }
+});
 
 // アプリがすでにインストールされているかチェック
 window.addEventListener('appinstalled', () => {

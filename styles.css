@@ -9,6 +9,7 @@ body {
     background-color: #f5f5f5;
     color: #333;
     line-height: 1.6;
+    padding-bottom: 120px; /* フローティングボタンとの重複を避けるため下部に余白追加 */
 }
 
 .container {
@@ -587,6 +588,57 @@ main {
     gap: 0.5rem;
     justify-content: flex-end;
     margin-top: 1.5rem;
+}
+
+.passphrase-container {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.passphrase-container input[type="text"] {
+    flex: 1;
+    font-family: monospace;
+    font-size: 0.95rem;
+    background-color: #f5f5f5;
+    cursor: text;
+}
+
+.passphrase-container .btn-secondary {
+    flex-shrink: 0;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+
+textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    resize: vertical;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: #007BFF;
+}
+
+#decrypted-result h4 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+#decrypted-result textarea {
+    background-color: #f5f5f5;
 }
 
 @media (max-width: 600px) {

@@ -137,6 +137,12 @@
                         <button class="btn btn-primary" onclick="exportCSV()">CSVダウンロード</button>
                         <button class="btn btn-primary" onclick="exportAndEmail()">エクスポートしてメールで送信</button>
                     </div>
+                    
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e0e0e0;">
+                        <h3>復号化ツール</h3>
+                        <p class="help-text">暗号化されたCSVデータを復号化します。</p>
+                        <button class="btn btn-secondary" onclick="showDecryptModal()">暗号化されたCSVデータを復号化する</button>
+                    </div>
                 </div>
             </section>
 
@@ -251,6 +257,40 @@
                     </div>
                 </div>
                 
+                <div class="maintenance-section">
+                    <h3>パスフレーズ</h3>
+                    <p class="help-text">このアプリケーションを識別するためのパスフレーズです。初回アクセス時に自動生成されます。</p>
+                    
+                    <div class="form-group">
+                        <label for="passphrase-display">現在のパスフレーズ</label>
+                        <div class="passphrase-container">
+                            <input type="text" id="passphrase-display" readonly>
+                            <button class="btn btn-secondary" onclick="copyPassphrase()">コピー</button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-warning" onclick="regeneratePassphrase()">パスフレーズを再作成</button>
+                    <p class="help-text danger-text">再作成すると現在のパスフレーズは失われます。</p>
+                    
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" id="encrypt-on-email" checked onchange="saveEncryptionSetting()">
+                            <label for="encrypt-on-email" style="margin: 0; cursor: pointer;">
+                                メール送信時にパスフレーズで暗号化する
+                            </label>
+                        </div>
+                        <p class="help-text">チェックを入れると、CSVデータをパスフレーズで暗号化してメール本文に含めます。</p>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <label for="recipient-email">送信先メールアドレス</label>
+                        <input type="email" id="recipient-email" placeholder="example@example.com">
+                        <p class="help-text">CSVファイルの送信先メールアドレスを設定します。</p>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="saveEmailSettings()">メール設定を保存</button>
+                </div>
+                
                 <div class="maintenance-section danger-zone">
                     <h3>データ管理</h3>
                     <p class="help-text danger-text">以下の操作は取り消すことができません。慎重に実行してください。</p>
@@ -310,6 +350,42 @@
                         <button type="button" class="btn btn-secondary" onclick="closeEditModal()">キャンセル</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 復号化モーダル -->
+    <div id="decrypt-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>暗号化されたCSVデータを復号化</h3>
+                <button class="close-btn" onclick="closeDecryptModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="decrypt-passphrase">パスフレーズ</label>
+                    <input type="text" id="decrypt-passphrase" placeholder="パスフレーズを入力">
+                    <p class="help-text">暗号化時に使用したパスフレーズを入力してください。</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="encrypted-data">暗号化されたデータ</label>
+                    <textarea id="encrypted-data" rows="8" placeholder="暗号化されたデータを貼り付けてください"></textarea>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-primary" onclick="decryptData()">復号化</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeDecryptModal()">キャンセル</button>
+                </div>
+                
+                <div id="decrypted-result" style="display: none; margin-top: 1rem;">
+                    <h4>復号化結果</h4>
+                    <textarea id="decrypted-data" rows="10" readonly></textarea>
+                    <div style="margin-top: 0.5rem;">
+                        <button class="btn btn-secondary" onclick="copyDecryptedData()">コピー</button>
+                        <button class="btn btn-primary" onclick="downloadDecryptedData()">CSVファイルとしてダウンロード</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
