@@ -180,6 +180,8 @@ function showTab(tabName) {
         document.getElementById('manual-datetime').value = now.toISOString().slice(0, 16);
         // パスフレーズを表示
         displayPassphrase();
+        // メールアドレスを表示
+        loadEmailSettings();
     }
 }
 
@@ -286,6 +288,14 @@ function downloadFile(blob, fileName) {
 }
 
 function exportAndEmail() {
+    // メールアドレスが設定されているか確認
+    const recipientEmail = localStorage.getItem('recipientEmail');
+    if (!recipientEmail) {
+        alert('送信先メールアドレスが設定されていません。\nメンテナンス画面で送信先メールアドレスを設定してください。');
+        showTab('maintenance');
+        return;
+    }
+    
     const exportType = document.querySelector('input[name="exportType"]:checked').value;
     let filteredRecords = [];
     let periodText = '';
@@ -342,9 +352,9 @@ function exportAndEmail() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     downloadFile(blob, fileName);
     
-    // 少し遅らせてメールアプリを開く
+    // 少し遅らせてメールアプリを開く（宛先に送信先メールアドレスを設定）
     setTimeout(() => {
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+        window.location.href = `mailto:${encodeURIComponent(recipientEmail)}?subject=${subject}&body=${body}`;
     }, 500);
 }
 
@@ -730,4 +740,34 @@ function regeneratePassphrase() {
         displayPassphrase();
         alert('新しいパスフレーズを生成しました。');
     }
+}
+
+// メールアドレス設定関連の関数
+function loadEmailSettings() {
+    const email = localStorage.getItem('recipientEmail');
+    if (email) {
+        document.getElementById('recipient-email').value = email;
+    }
+}
+
+function saveEmailSettings() {
+    const email = document.getElementById('recipient-email').value.trim();
+    
+    if (email && !isValidEmail(email)) {
+        alert('有効なメールアドレスを入力してください。');
+        return;
+    }
+    
+    if (email) {
+        localStorage.setItem('recipientEmail', email);
+        alert('メール設定を保存しました。');
+    } else {
+        localStorage.removeItem('recipientEmail');
+        alert('メール設定をクリアしました。');
+    }
+}
+
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
 }

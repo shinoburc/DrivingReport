@@ -265,6 +265,14 @@
                     
                     <button class="btn btn-warning" onclick="regeneratePassphrase()">パスフレーズを再作成</button>
                     <p class="help-text danger-text">再作成すると現在のパスフレーズは失われます。</p>
+                    
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <label for="recipient-email">送信先メールアドレス</label>
+                        <input type="email" id="recipient-email" placeholder="example@example.com">
+                        <p class="help-text">CSVファイルの送信先メールアドレスを設定します。</p>
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="saveEmailSettings()">メール設定を保存</button>
                 </div>
                 
                 <div class="maintenance-section danger-zone">
