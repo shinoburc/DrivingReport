@@ -23,6 +23,7 @@ window.onload = function() {
     loadActionSettings();
     applyActionSettings();
     updateMaintenanceSelectOptions();
+    initializePassphrase();
     
     document.querySelectorAll('input[name="exportType"]').forEach(radio => {
         radio.addEventListener('change', toggleExportForm);
@@ -177,6 +178,8 @@ function showTab(tabName) {
         const now = new Date();
         now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
         document.getElementById('manual-datetime').value = now.toISOString().slice(0, 16);
+        // パスフレーズを表示
+        displayPassphrase();
     }
 }
 
@@ -677,4 +680,54 @@ function saveEditedRecord() {
     closeEditModal();
     
     alert('記録を更新しました。');
+}
+
+// パスフレーズ関連の関数
+function generatePassphrase() {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let passphrase = '';
+    
+    // 8文字のランダム文字列を生成
+    for (let i = 0; i < 8; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        passphrase += characters[randomIndex];
+    }
+    
+    return passphrase;
+}
+
+function initializePassphrase() {
+    if (!localStorage.getItem('appPassphrase')) {
+        const passphrase = generatePassphrase();
+        localStorage.setItem('appPassphrase', passphrase);
+    }
+}
+
+function displayPassphrase() {
+    const passphrase = localStorage.getItem('appPassphrase');
+    if (passphrase) {
+        document.getElementById('passphrase-display').value = passphrase;
+    }
+}
+
+function copyPassphrase() {
+    const passphraseInput = document.getElementById('passphrase-display');
+    passphraseInput.select();
+    passphraseInput.setSelectionRange(0, 99999); // モバイル対応
+    
+    try {
+        document.execCommand('copy');
+        alert('パスフレーズをコピーしました。');
+    } catch (err) {
+        alert('コピーに失敗しました。手動でコピーしてください。');
+    }
+}
+
+function regeneratePassphrase() {
+    if (confirm('現在のパスフレーズを破棄して新しいパスフレーズを生成しますか？この操作は取り消せません。')) {
+        const newPassphrase = generatePassphrase();
+        localStorage.setItem('appPassphrase', newPassphrase);
+        displayPassphrase();
+        alert('新しいパスフレーズを生成しました。');
+    }
 }

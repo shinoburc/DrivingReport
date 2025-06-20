@@ -251,6 +251,22 @@
                     </div>
                 </div>
                 
+                <div class="maintenance-section">
+                    <h3>パスフレーズ</h3>
+                    <p class="help-text">このアプリケーションを識別するためのパスフレーズです。初回アクセス時に自動生成されます。</p>
+                    
+                    <div class="form-group">
+                        <label for="passphrase-display">現在のパスフレーズ</label>
+                        <div class="passphrase-container">
+                            <input type="text" id="passphrase-display" readonly>
+                            <button class="btn btn-secondary" onclick="copyPassphrase()">コピー</button>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-warning" onclick="regeneratePassphrase()">パスフレーズを再作成</button>
+                    <p class="help-text danger-text">再作成すると現在のパスフレーズは失われます。</p>
+                </div>
+                
                 <div class="maintenance-section danger-zone">
                     <h3>データ管理</h3>
                     <p class="help-text danger-text">以下の操作は取り消すことができません。慎重に実行してください。</p>
