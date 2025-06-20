@@ -341,8 +341,9 @@ function exportAndEmail() {
     const csv = generateCSV(filteredRecords);
     const fileName = `運転日報_${periodText.replace(/[\/\s～]/g, '_')}.csv`;
     
-    // 暗号化設定を確認
-    const encryptOnEmail = localStorage.getItem('encryptOnEmail') === 'true';
+    // 暗号化設定を確認（初回はデフォルトでtrue）
+    const encryptOnEmailSetting = localStorage.getItem('encryptOnEmail');
+    const encryptOnEmail = encryptOnEmailSetting === null ? true : encryptOnEmailSetting === 'true';
     const passphrase = localStorage.getItem('appPassphrase');
     
     let bodyContent;
