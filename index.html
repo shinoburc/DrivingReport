@@ -369,7 +369,13 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="encrypted-data">暗号化されたデータ</label>
+                    <label for="encrypted-file">暗号化されたファイル</label>
+                    <input type="file" id="encrypted-file" accept=".enc,.txt" onchange="handleFileSelect(event)">
+                    <p class="help-text">暗号化されたファイル（.enc）を選択してください。</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="encrypted-data">または、暗号化されたデータを直接入力</label>
                     <textarea id="encrypted-data" rows="8" placeholder="暗号化されたデータを貼り付けてください"></textarea>
                 </div>
                 

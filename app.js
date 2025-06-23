@@ -926,12 +926,29 @@ function showDecryptModal() {
     document.getElementById('decrypt-modal').style.display = 'block';
     document.getElementById('decrypt-passphrase').value = '';
     document.getElementById('encrypted-data').value = '';
+    document.getElementById('encrypted-file').value = '';
     document.getElementById('decrypted-result').style.display = 'none';
     document.getElementById('decrypted-data').value = '';
 }
 
 function closeDecryptModal() {
     document.getElementById('decrypt-modal').style.display = 'none';
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        // ファイルの内容をテキストエリアに設定
+        document.getElementById('encrypted-data').value = content;
+    };
+    reader.onerror = function() {
+        alert('ファイルの読み込みに失敗しました。');
+    };
+    reader.readAsText(file);
 }
 
 async function decryptData() {
