@@ -197,7 +197,7 @@ function toggleExportForm() {
     }
 }
 
-function exportCSV() {
+async function exportCSV() {
     const exportType = document.querySelector('input[name="exportType"]:checked').value;
     let filteredRecords = [];
     
@@ -235,8 +235,31 @@ function exportCSV() {
     }
     
     const csv = generateCSV(filteredRecords);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const fileName = `driving_report_${new Date().toISOString().slice(0, 10)}.csv`;
+    
+    // 暗号化設定を確認（初回はデフォルトでtrue）
+    const encryptOnEmailSetting = localStorage.getItem('encryptOnEmail');
+    const encryptOnEmail = encryptOnEmailSetting === null ? true : encryptOnEmailSetting === 'true';
+    const passphrase = localStorage.getItem('appPassphrase');
+    
+    let blob;
+    let fileName;
+    
+    if (encryptOnEmail && passphrase) {
+        // CSVデータを暗号化
+        const encryptedData = await encryptAES256GCM(csv, passphrase);
+        if (encryptedData) {
+            blob = new Blob([encryptedData], { type: 'text/plain;charset=utf-8;' });
+            fileName = `driving_report_${new Date().toISOString().slice(0, 10)}.csv.enc`;
+        } else {
+            alert('暗号化に失敗しました。暗号化せずにダウンロードします。');
+            blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            fileName = `driving_report_${new Date().toISOString().slice(0, 10)}.csv`;
+        }
+    } else {
+        // 暗号化しない場合は通常通り
+        blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        fileName = `driving_report_${new Date().toISOString().slice(0, 10)}.csv`;
+    }
     
     if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: blob.type })] })) {
         const file = new File([blob], fileName, { type: blob.type });
@@ -903,12 +926,29 @@ function showDecryptModal() {
     document.getElementById('decrypt-modal').style.display = 'block';
     document.getElementById('decrypt-passphrase').value = '';
     document.getElementById('encrypted-data').value = '';
+    document.getElementById('encrypted-file').value = '';
     document.getElementById('decrypted-result').style.display = 'none';
     document.getElementById('decrypted-data').value = '';
 }
 
 function closeDecryptModal() {
     document.getElementById('decrypt-modal').style.display = 'none';
+}
+
+function handleFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const content = e.target.result;
+        // ファイルの内容をテキストエリアに設定
+        document.getElementById('encrypted-data').value = content;
+    };
+    reader.onerror = function() {
+        alert('ファイルの読み込みに失敗しました。');
+    };
+    reader.readAsText(file);
 }
 
 async function decryptData() {
