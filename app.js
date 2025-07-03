@@ -57,29 +57,56 @@ function recordAction(actionType) {
     
     showProgress(true);
     
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                saveRecord(actionName, destination, purpose, gasMeter, position);
-            },
-            (error) => {
-                showProgress(false);
-                if (confirm('GPS情報を取得できませんでした。GPS情報なしで記録しますか？')) {
-                    showProgress(true);
-                    saveRecord(actionName, destination, purpose, gasMeter, null);
+    // 到着アクションの場合、有料道路利用確認を行う
+    if (actionType === 'arrival') {
+        const usedTollRoad = confirm('有料道路を利用しましたか？\n\n「OK」= はい（利用した）\n「キャンセル」= いいえ（利用していない）');
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    saveRecord(actionName, destination, purpose, gasMeter, position, usedTollRoad);
+                },
+                (error) => {
+                    showProgress(false);
+                    if (confirm('GPS情報を取得できませんでした。GPS情報なしで記録しますか？')) {
+                        showProgress(true);
+                        saveRecord(actionName, destination, purpose, gasMeter, null, usedTollRoad);
+                    }
                 }
+            );
+        } else {
+            showProgress(false);
+            if (confirm('お使いのブラウザはGPS機能に対応していません。GPS情報なしで記録しますか？')) {
+                showProgress(true);
+                saveRecord(actionName, destination, purpose, gasMeter, null, usedTollRoad);
             }
-        );
+        }
     } else {
-        showProgress(false);
-        if (confirm('お使いのブラウザはGPS機能に対応していません。GPS情報なしで記録しますか？')) {
-            showProgress(true);
-            saveRecord(actionName, destination, purpose, gasMeter, null);
+        // 到着以外のアクションは従来通り
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    saveRecord(actionName, destination, purpose, gasMeter, position);
+                },
+                (error) => {
+                    showProgress(false);
+                    if (confirm('GPS情報を取得できませんでした。GPS情報なしで記録しますか？')) {
+                        showProgress(true);
+                        saveRecord(actionName, destination, purpose, gasMeter, null);
+                    }
+                }
+            );
+        } else {
+            showProgress(false);
+            if (confirm('お使いのブラウザはGPS機能に対応していません。GPS情報なしで記録しますか？')) {
+                showProgress(true);
+                saveRecord(actionName, destination, purpose, gasMeter, null);
+            }
         }
     }
 }
 
-function saveRecord(action, destination, purpose, gasMeter, position) {
+function saveRecord(action, destination, purpose, gasMeter, position, usedTollRoad = false) {
     const record = {
         id: Date.now(),
         action: action,
@@ -91,7 +118,8 @@ function saveRecord(action, destination, purpose, gasMeter, position) {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             accuracy: position.coords.accuracy
-        } : null
+        } : null,
+        usedTollRoad: usedTollRoad
     };
     
     records.unshift(record);
@@ -142,6 +170,10 @@ function displayRecords() {
                     ${record.location ? 
                         `<div>GPS: ${record.location.latitude.toFixed(6)}, ${record.location.longitude.toFixed(6)}</div>` : 
                         '<div>GPS: 未取得</div>'
+                    }
+                    ${record.usedTollRoad !== undefined && record.action === '到着' ? 
+                        `<div>有料道路: ${record.usedTollRoad ? '利用' : '未利用'}</div>` : 
+                        ''
                     }
                 </div>
             </div>
@@ -276,7 +308,7 @@ async function exportCSV() {
 }
 
 function generateCSV(records) {
-    const headers = ['日時', 'アクション', '行先', '目的', 'ガソリンメーター(km)', '緯度', '経度', 'GPS精度(m)'];
+    const headers = ['日時', 'アクション', '行先', '目的', 'ガソリンメーター(km)', '緯度', '経度', 'GPS精度(m)', '有料道路'];
     const rows = records.map(record => {
         const date = new Date(record.datetime);
         return [
@@ -287,7 +319,8 @@ function generateCSV(records) {
             record.gasMeter !== null ? record.gasMeter : '',
             record.location ? record.location.latitude : '',
             record.location ? record.location.longitude : '',
-            record.location ? record.location.accuracy : ''
+            record.location ? record.location.accuracy : '',
+            record.usedTollRoad !== undefined && record.action === '到着' ? (record.usedTollRoad ? '利用' : '未利用') : ''
         ];
     });
     
@@ -405,6 +438,7 @@ function createManualRecord() {
     const purpose = document.getElementById('manual-purpose').value.trim();
     const gasMeter = document.getElementById('manual-gasMeter').value.trim();
     const gpsText = document.getElementById('manual-gps').value.trim();
+    const usedTollRoad = document.getElementById('manual-toll-road').checked;
     
     // 入力チェック
     if (!datetime) {
@@ -442,7 +476,8 @@ function createManualRecord() {
         purpose: purpose || '',
         gasMeter: gasMeter ? parseFloat(gasMeter) : null,
         datetime: new Date(datetime).toISOString(),
-        location: location
+        location: location,
+        usedTollRoad: action === '到着' ? usedTollRoad : false
     };
     
     // 記録を追加してソート
@@ -455,6 +490,8 @@ function createManualRecord() {
     document.getElementById('manual-purpose').value = '';
     document.getElementById('manual-gasMeter').value = '';
     document.getElementById('manual-gps').value = '';
+    document.getElementById('manual-toll-road').checked = false;
+    document.getElementById('manual-toll-road-container').style.display = 'none';
     
     // 記録一覧タブに移動
     displayRecords();
@@ -656,6 +693,15 @@ function editRecord(id) {
     } else {
         document.getElementById('edit-gps').value = 'GPS未取得';
     }
+    
+    // 有料道路利用状況
+    if (record.action === '到着' && record.usedTollRoad !== undefined) {
+        document.getElementById('edit-toll-road').checked = record.usedTollRoad;
+        document.getElementById('edit-toll-road-container').style.display = 'block';
+    } else {
+        document.getElementById('edit-toll-road').checked = false;
+        document.getElementById('edit-toll-road-container').style.display = 'none';
+    }
 }
 
 function updateEditActionOptions() {
@@ -680,6 +726,7 @@ function updateEditActionOptions() {
 function closeEditModal() {
     document.getElementById('edit-modal').style.display = 'none';
     document.getElementById('edit-form').reset();
+    document.getElementById('edit-toll-road-container').style.display = 'none';
 }
 
 function saveEditedRecord() {
@@ -696,6 +743,7 @@ function saveEditedRecord() {
     const destination = document.getElementById('edit-destination').value.trim();
     const purpose = document.getElementById('edit-purpose').value.trim();
     const gasMeter = document.getElementById('edit-gasMeter').value.trim();
+    const usedTollRoad = document.getElementById('edit-toll-road').checked;
     
     // 必須チェック
     if (!datetime || !action) {
@@ -716,7 +764,8 @@ function saveEditedRecord() {
         action: action,
         destination: destination,
         purpose: purpose,
-        gasMeter: gasMeter ? parseFloat(gasMeter) : null
+        gasMeter: gasMeter ? parseFloat(gasMeter) : null,
+        usedTollRoad: action === '到着' ? usedTollRoad : records[recordIndex].usedTollRoad
     };
     
     // ソート
@@ -933,6 +982,30 @@ function showDecryptModal() {
 
 function closeDecryptModal() {
     document.getElementById('decrypt-modal').style.display = 'none';
+}
+
+function toggleManualTollRoadOption() {
+    const action = document.getElementById('manual-action').value;
+    const tollRoadContainer = document.getElementById('manual-toll-road-container');
+    
+    if (action === '到着') {
+        tollRoadContainer.style.display = 'block';
+    } else {
+        tollRoadContainer.style.display = 'none';
+        document.getElementById('manual-toll-road').checked = false;
+    }
+}
+
+function toggleEditTollRoadOption() {
+    const action = document.getElementById('edit-action').value;
+    const tollRoadContainer = document.getElementById('edit-toll-road-container');
+    
+    if (action === '到着' || (actionSettings.arrival && action === actionSettings.arrival.actionName)) {
+        tollRoadContainer.style.display = 'block';
+    } else {
+        tollRoadContainer.style.display = 'none';
+        document.getElementById('edit-toll-road').checked = false;
+    }
 }
 
 function handleFileSelect(event) {
