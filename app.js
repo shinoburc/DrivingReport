@@ -4,6 +4,7 @@ let actionSettings = {
     waypoint: { visible: false, displayName: '経由', actionName: '経由' },
     arrival: { visible: true, displayName: '到着', actionName: '到着' }
 };
+let showGasMeter = false; // デフォルトは非表示
 
 if (localStorage.getItem('drivingRecords')) {
     records = JSON.parse(localStorage.getItem('drivingRecords'));
@@ -11,6 +12,10 @@ if (localStorage.getItem('drivingRecords')) {
 
 if (localStorage.getItem('actionSettings')) {
     actionSettings = JSON.parse(localStorage.getItem('actionSettings'));
+}
+
+if (localStorage.getItem('showGasMeter') !== null) {
+    showGasMeter = localStorage.getItem('showGasMeter') === 'true';
 }
 
 window.onload = function() {
@@ -24,6 +29,8 @@ window.onload = function() {
     applyActionSettings();
     updateMaintenanceSelectOptions();
     initializePassphrase();
+    loadGasMeterSettings();
+    applyGasMeterVisibility();
     
     document.querySelectorAll('input[name="exportType"]').forEach(radio => {
         radio.addEventListener('change', toggleExportForm);
@@ -49,10 +56,16 @@ function recordAction(actionType) {
     const gasMeter = document.getElementById('gasMeter').value.trim();
     const actionName = actionSettings[actionType].actionName;
     
-    // 出発のアクションでは全て必須入力
-    if (actionType === 'departure' && (!destination || !purpose || !gasMeter)) {
-        alert(`${actionSettings.departure.displayName}時は行先、目的、ガソリンメーター情報を全て入力してください。`);
-        return;
+    // 出発のアクションでは行先、目的は必須。ガソリンメーターは表示設定に従う
+    if (actionType === 'departure') {
+        if (!destination || !purpose) {
+            alert(`${actionSettings.departure.displayName}時は行先、目的を入力してください。`);
+            return;
+        }
+        if (showGasMeter && !gasMeter) {
+            alert(`${actionSettings.departure.displayName}時はガソリンメーター情報も入力してください。`);
+            return;
+        }
     }
     
     showProgress(true);
@@ -166,7 +179,7 @@ function displayRecords() {
                 <div class="record-details">
                     ${record.destination ? `<div>行先: ${record.destination}</div>` : ''}
                     ${record.purpose ? `<div>目的: ${record.purpose}</div>` : ''}
-                    ${record.gasMeter !== null ? `<div>メーター: ${record.gasMeter} km</div>` : ''}
+                    ${showGasMeter && record.gasMeter !== null ? `<div>メーター: ${record.gasMeter} km</div>` : ''}
                     ${record.location ? 
                         `<div>GPS: ${record.location.latitude.toFixed(6)}, ${record.location.longitude.toFixed(6)}</div>` : 
                         '<div>GPS: 未取得</div>'
@@ -214,6 +227,13 @@ function showTab(tabName) {
         displayPassphrase();
         // メールアドレスと暗号化設定を表示
         loadEmailSettings();
+        // ガソリンメーター設定を表示
+        loadGasMeterSettings();
+        // 手動記録作成のガソリンメーター入力欄の表示制御
+        const manualGasMeterGroup = document.getElementById('manual-gas-meter-group');
+        if (manualGasMeterGroup) {
+            manualGasMeterGroup.style.display = showGasMeter ? 'block' : 'none';
+        }
     }
 }
 
@@ -446,9 +466,15 @@ function createManualRecord() {
         return;
     }
     
-    if (action === '出発' && (!destination || !purpose || !gasMeter)) {
-        alert(`${actionSettings.departure.displayName}時は行在、目的、ガソリンメーター情報を全て入力してください。`);
-        return;
+    if (action === '出発') {
+        if (!destination || !purpose) {
+            alert(`${actionSettings.departure.displayName}時は行先、目的を入力してください。`);
+            return;
+        }
+        if (showGasMeter && !gasMeter) {
+            alert(`${actionSettings.departure.displayName}時はガソリンメーター情報も入力してください。`);
+            return;
+        }
     }
     
     // GPS座標のパース
@@ -702,6 +728,12 @@ function editRecord(id) {
         document.getElementById('edit-toll-road').checked = false;
         document.getElementById('edit-toll-road-container').style.display = 'none';
     }
+    
+    // ガソリンメーター入力欄の表示制御
+    const editGasMeterGroup = document.getElementById('edit-gas-meter-group');
+    if (editGasMeterGroup) {
+        editGasMeterGroup.style.display = showGasMeter ? 'block' : 'none';
+    }
 }
 
 function updateEditActionOptions() {
@@ -751,10 +783,16 @@ function saveEditedRecord() {
         return;
     }
     
-    // 出発のアクションでは全て必須入力
-    if (action === actionSettings.departure.actionName && (!destination || !purpose || !gasMeter)) {
-        alert(`${actionSettings.departure.displayName}時は行先、目的、ガソリンメーター情報を全て入力してください。`);
-        return;
+    // 出発のアクションでは行先、目的は必須。ガソリンメーターは表示設定に従う
+    if (action === actionSettings.departure.actionName) {
+        if (!destination || !purpose) {
+            alert(`${actionSettings.departure.displayName}時は行先、目的を入力してください。`);
+            return;
+        }
+        if (showGasMeter && !gasMeter) {
+            alert(`${actionSettings.departure.displayName}時はガソリンメーター情報も入力してください。`);
+            return;
+        }
     }
     
     // 記録を更新
@@ -1006,6 +1044,33 @@ function toggleEditTollRoadOption() {
         tollRoadContainer.style.display = 'none';
         document.getElementById('edit-toll-road').checked = false;
     }
+}
+
+// ガソリンメーター表示設定関連の関数
+function loadGasMeterSettings() {
+    const checkbox = document.getElementById('show-gas-meter');
+    if (checkbox) {
+        checkbox.checked = showGasMeter;
+    }
+}
+
+function saveGasMeterSettings() {
+    const checkbox = document.getElementById('show-gas-meter');
+    showGasMeter = checkbox.checked;
+    localStorage.setItem('showGasMeter', showGasMeter);
+    applyGasMeterVisibility();
+    alert('ガソリンメーター表示設定を保存しました。');
+}
+
+function applyGasMeterVisibility() {
+    // 記録画面のガソリンメーター入力欄
+    const gasMeterGroup = document.getElementById('gas-meter-group');
+    if (gasMeterGroup) {
+        gasMeterGroup.style.display = showGasMeter ? 'block' : 'none';
+    }
+    
+    // 記録一覧を再表示して変更を反映
+    displayRecords();
 }
 
 function handleFileSelect(event) {
