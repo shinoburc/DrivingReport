@@ -31,7 +31,7 @@
                     <label for="purpose">目的</label>
                     <input type="text" id="purpose" placeholder="訪問の目的を入力">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="gas-meter-group">
                     <label for="gasMeter">ガソリンメーター (km)</label>
                     <div class="input-with-camera">
                         <input type="number" id="gasMeter" placeholder="現在のメーター値">
@@ -177,7 +177,7 @@
                         <input type="text" id="manual-purpose" placeholder="訪問の目的を入力">
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group" id="manual-gas-meter-group">
                         <label for="manual-gasMeter">ガソリンメーター (km)</label>
                         <input type="number" id="manual-gasMeter" placeholder="メーター値">
                     </div>
@@ -265,6 +265,18 @@
                 </div>
                 
                 <div class="maintenance-section">
+                    <h3>ガソリンメーター表示設定</h3>
+                    <p class="help-text">ガソリンメーターの入力欄と表示の有無を設定できます。</p>
+                    
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="show-gas-meter" onchange="saveGasMeterSettings()">
+                            ガソリンメーターを表示する
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="maintenance-section">
                     <h3>パスフレーズ</h3>
                     <p class="help-text">このアプリケーションを識別するためのパスフレーズです。初回アクセス時に自動生成されます。</p>
                     
@@ -341,7 +353,7 @@
                         <input type="text" id="edit-purpose" placeholder="訪問の目的を入力">
                     </div>
                     
-                    <div class="form-group">
+                    <div class="form-group" id="edit-gas-meter-group">
                         <label for="edit-gasMeter">ガソリンメーター (km)</label>
                         <input type="number" id="edit-gasMeter" placeholder="メーター値">
                     </div>
