@@ -160,7 +160,7 @@
                     
                     <div class="form-group">
                         <label for="manual-action">アクション</label>
-                        <select id="manual-action">
+                        <select id="manual-action" onchange="toggleManualTollRoadOption()">
                             <option value="出発">出発</option>
                             <option value="経由">経由</option>
                             <option value="到着">到着</option>
@@ -186,6 +186,13 @@
                         <label for="manual-gps">GPS座標</label>
                         <input type="text" id="manual-gps" placeholder="例: 35.6812, 139.7671 または 35.6812, 139.7671">
                         <small class="help-text">Google マップで場所を右クリックして座標をコピーできます</small>
+                    </div>
+                    
+                    <div class="form-group" id="manual-toll-road-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="manual-toll-road">
+                            有料道路を利用
+                        </label>
                     </div>
                     
                     <button class="btn btn-primary" onclick="createManualRecord()">記録を作成</button>
@@ -319,7 +326,7 @@
                     
                     <div class="form-group">
                         <label for="edit-action">アクション</label>
-                        <select id="edit-action" required>
+                        <select id="edit-action" required onchange="toggleEditTollRoadOption()">
                             <option value="">選択してください</option>
                         </select>
                     </div>
@@ -343,6 +350,13 @@
                         <label for="edit-gps">GPS座標</label>
                         <input type="text" id="edit-gps" placeholder="例: 35.6812, 139.7671" readonly>
                         <small class="help-text">GPS座標は編集できません</small>
+                    </div>
+                    
+                    <div class="form-group" id="edit-toll-road-container" style="display: none;">
+                        <label>
+                            <input type="checkbox" id="edit-toll-road">
+                            有料道路を利用
+                        </label>
                     </div>
                     
                     <div class="modal-actions">
