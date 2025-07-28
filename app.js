@@ -51,13 +51,6 @@ function showProgress(show) {
 }
 
 function recordAction(actionType) {
-    // アクションに応じて有料道路チェックボックスの表示を制御
-    if (actionType === 'arrival') {
-        showTollRoadCheckbox();
-    } else {
-        hideTollRoadCheckbox();
-    }
-    
     const destination = document.getElementById('destination').value.trim();
     const purpose = document.getElementById('purpose').value.trim();
     const gasMeter = document.getElementById('gasMeter').value.trim();
@@ -619,15 +612,6 @@ function applyActionSettings() {
         arrivalBtn.style.display = actionSettings.arrival.visible ? 'inline-block' : 'none';
         arrivalBtn.textContent = actionSettings.arrival.displayName;
     }
-}
-
-function showTollRoadCheckbox() {
-    document.getElementById('toll-road-group').style.display = 'block';
-}
-
-function hideTollRoadCheckbox() {
-    document.getElementById('toll-road-group').style.display = 'none';
-    document.getElementById('toll-road').checked = false;
 }
 
 function updateMaintenanceSelectOptions() {
