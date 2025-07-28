@@ -38,6 +38,12 @@
                         <button type="button" class="camera-btn" onclick="openCamera()" title="カメラで撮影">📷</button>
                     </div>
                 </div>
+                <div class="form-group" id="toll-road-group" style="display: none;">
+                    <label>
+                        <input type="checkbox" id="toll-road">
+                        有料道路を利用
+                    </label>
+                </div>
                 <div class="action-buttons" id="action-buttons">
                     <button class="btn btn-primary" id="departure-btn" onclick="recordAction('departure')" style="display:none;">出発</button>
                     <button class="btn btn-secondary" id="waypoint-btn" onclick="recordAction('waypoint')" style="display:none;">経由</button>

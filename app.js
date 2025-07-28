@@ -51,10 +51,18 @@ function showProgress(show) {
 }
 
 function recordAction(actionType) {
+    // アクションに応じて有料道路チェックボックスの表示を制御
+    if (actionType === 'arrival') {
+        showTollRoadCheckbox();
+    } else {
+        hideTollRoadCheckbox();
+    }
+    
     const destination = document.getElementById('destination').value.trim();
     const purpose = document.getElementById('purpose').value.trim();
     const gasMeter = document.getElementById('gasMeter').value.trim();
     const actionName = actionSettings[actionType].actionName;
+    const usedTollRoad = document.getElementById('toll-road').checked;
     
     // 出発のアクションでは行先、目的は必須。ガソリンメーターは表示設定に従う
     if (actionType === 'departure') {
@@ -70,51 +78,24 @@ function recordAction(actionType) {
     
     showProgress(true);
     
-    // 到着アクションの場合、有料道路利用確認を行う
-    if (actionType === 'arrival') {
-        const usedTollRoad = confirm('有料道路を利用しましたか？\n\n「OK」= はい（利用した）\n「キャンセル」= いいえ（利用していない）');
-        
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    saveRecord(actionName, destination, purpose, gasMeter, position, usedTollRoad);
-                },
-                (error) => {
-                    showProgress(false);
-                    if (confirm('GPS情報を取得できませんでした。GPS情報なしで記録しますか？')) {
-                        showProgress(true);
-                        saveRecord(actionName, destination, purpose, gasMeter, null, usedTollRoad);
-                    }
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                saveRecord(actionName, destination, purpose, gasMeter, position, actionType === 'arrival' ? usedTollRoad : false);
+            },
+            (error) => {
+                showProgress(false);
+                if (confirm('GPS情報を取得できませんでした。GPS情報なしで記録しますか？')) {
+                    showProgress(true);
+                    saveRecord(actionName, destination, purpose, gasMeter, null, actionType === 'arrival' ? usedTollRoad : false);
                 }
-            );
-        } else {
-            showProgress(false);
-            if (confirm('お使いのブラウザはGPS機能に対応していません。GPS情報なしで記録しますか？')) {
-                showProgress(true);
-                saveRecord(actionName, destination, purpose, gasMeter, null, usedTollRoad);
             }
-        }
+        );
     } else {
-        // 到着以外のアクションは従来通り
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    saveRecord(actionName, destination, purpose, gasMeter, position);
-                },
-                (error) => {
-                    showProgress(false);
-                    if (confirm('GPS情報を取得できませんでした。GPS情報なしで記録しますか？')) {
-                        showProgress(true);
-                        saveRecord(actionName, destination, purpose, gasMeter, null);
-                    }
-                }
-            );
-        } else {
-            showProgress(false);
-            if (confirm('お使いのブラウザはGPS機能に対応していません。GPS情報なしで記録しますか？')) {
-                showProgress(true);
-                saveRecord(actionName, destination, purpose, gasMeter, null);
-            }
+        showProgress(false);
+        if (confirm('お使いのブラウザはGPS機能に対応していません。GPS情報なしで記録しますか？')) {
+            showProgress(true);
+            saveRecord(actionName, destination, purpose, gasMeter, null, actionType === 'arrival' ? usedTollRoad : false);
         }
     }
 }
@@ -141,6 +122,7 @@ function saveRecord(action, destination, purpose, gasMeter, position, usedTollRo
     document.getElementById('destination').value = '';
     document.getElementById('purpose').value = '';
     document.getElementById('gasMeter').value = '';
+    document.getElementById('toll-road').checked = false;
     
     displayRecords();
     showTab('records');
@@ -637,6 +619,15 @@ function applyActionSettings() {
         arrivalBtn.style.display = actionSettings.arrival.visible ? 'inline-block' : 'none';
         arrivalBtn.textContent = actionSettings.arrival.displayName;
     }
+}
+
+function showTollRoadCheckbox() {
+    document.getElementById('toll-road-group').style.display = 'block';
+}
+
+function hideTollRoadCheckbox() {
+    document.getElementById('toll-road-group').style.display = 'none';
+    document.getElementById('toll-road').checked = false;
 }
 
 function updateMaintenanceSelectOptions() {
