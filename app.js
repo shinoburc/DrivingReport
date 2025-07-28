@@ -427,7 +427,7 @@ async function exportAndEmail() {
         // CSVデータを暗号化
         const encryptedData = await encryptAES256GCM(csv, passphrase);
         if (encryptedData) {
-            bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、AES-256-GCMで暗号化されたCSVデータ：\n（パスフレーズで復号化してください）\n\n${encryptedData}`;
+            bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下の手順で .enc ファイルを作成してください。\n　1．本文から下記の暗号部分をコピーする\n　2．メモ帳へ貼り付ける\n　3．ファイル種別を「すべて」に設定する\n　4．拡張子を「.enc」に変更して保存する\n\n${encryptedData}`;
         } else {
             alert('暗号化に失敗しました。暗号化せずに送信します。');
             bodyContent = `運転日報（${periodText}）を送付いたします。\n\n添付ファイル: ${fileName}\n\n---\n以下、CSVデータ：\n\n${csv}`;
