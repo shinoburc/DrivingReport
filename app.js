@@ -236,7 +236,12 @@ async function exportCSV() {
         }
         
         filteredRecords = records.filter(record => {
-            return record.datetime.startsWith(month);
+            // ISO文字列を日本時間に変換して月を比較
+            const recordDate = new Date(record.datetime);
+            const year = recordDate.getFullYear();
+            const monthStr = String(recordDate.getMonth() + 1).padStart(2, '0');
+            const yearMonth = `${year}-${monthStr}`;
+            return yearMonth === month;
         });
     } else {
         const startDate = document.getElementById('startDate').value;
@@ -362,7 +367,12 @@ async function exportAndEmail() {
         periodText = `${year}年${monthNum}月`;
         
         filteredRecords = records.filter(record => {
-            return record.datetime.startsWith(month);
+            // ISO文字列を日本時間に変換して月を比較
+            const recordDate = new Date(record.datetime);
+            const year = recordDate.getFullYear();
+            const monthStr = String(recordDate.getMonth() + 1).padStart(2, '0');
+            const yearMonth = `${year}-${monthStr}`;
+            return yearMonth === month;
         });
     } else {
         const startDate = document.getElementById('startDate').value;
