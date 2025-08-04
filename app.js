@@ -6,36 +6,82 @@ let actionSettings = {
 };
 let showGasMeter = false; // デフォルトは非表示
 
-if (localStorage.getItem('drivingRecords')) {
-    records = JSON.parse(localStorage.getItem('drivingRecords'));
-}
-
-if (localStorage.getItem('actionSettings')) {
-    actionSettings = JSON.parse(localStorage.getItem('actionSettings'));
-}
-
-if (localStorage.getItem('showGasMeter') !== null) {
-    showGasMeter = localStorage.getItem('showGasMeter') === 'true';
-}
-
-window.onload = function() {
+// アプリケーション初期化
+window.onload = async function() {
     const now = new Date();
     document.getElementById('exportMonth').value = now.toISOString().slice(0, 7);
     document.getElementById('startDate').value = now.toISOString().slice(0, 10);
     document.getElementById('endDate').value = now.toISOString().slice(0, 10);
     
-    displayRecords();
-    loadActionSettings();
-    applyActionSettings();
-    updateMaintenanceSelectOptions();
-    initializePassphrase();
-    loadGasMeterSettings();
-    applyGasMeterVisibility();
-    
-    document.querySelectorAll('input[name="exportType"]').forEach(radio => {
-        radio.addEventListener('change', toggleExportForm);
-    });
+    try {
+        // IndexedDBを初期化
+        await dbInstance.open();
+        
+        // LocalStorageからのマイグレーション（必要に応じて）
+        await dbInstance.migrateFromLocalStorage();
+        
+        // データの読み込み
+        await loadAllData();
+        
+        // UI初期化
+        displayRecords();
+        loadActionSettings();
+        applyActionSettings();
+        updateMaintenanceSelectOptions();
+        initializePassphrase();
+        loadGasMeterSettings();
+        applyGasMeterVisibility();
+        
+        document.querySelectorAll('input[name="exportType"]').forEach(radio => {
+            radio.addEventListener('change', toggleExportForm);
+        });
+        
+        console.log('Application initialized successfully');
+    } catch (error) {
+        console.error('Failed to initialize application:', error);
+        alert('アプリケーションの初期化に失敗しました。ブラウザを再読み込みしてください。');
+    }
 };
+
+// データの読み込み
+async function loadAllData() {
+    try {
+        records = await dbInstance.getAllRecords();
+        
+        const actionSettingsData = await dbInstance.getSetting('actionSettings');
+        if (actionSettingsData) {
+            actionSettings = actionSettingsData;
+        }
+        
+        const showGasMeterData = await dbInstance.getSetting('showGasMeter');
+        if (showGasMeterData !== null) {
+            showGasMeter = showGasMeterData;
+        }
+        
+        console.log(`Loaded ${records.length} records`);
+    } catch (error) {
+        console.error('Failed to load data:', error);
+        // フォールバック: LocalStorageから読み込み
+        await fallbackToLocalStorage();
+    }
+}
+
+// LocalStorageへのフォールバック
+async function fallbackToLocalStorage() {
+    console.log('Falling back to LocalStorage...');
+    
+    if (localStorage.getItem('drivingRecords')) {
+        records = JSON.parse(localStorage.getItem('drivingRecords'));
+    }
+
+    if (localStorage.getItem('actionSettings')) {
+        actionSettings = JSON.parse(localStorage.getItem('actionSettings'));
+    }
+
+    if (localStorage.getItem('showGasMeter') !== null) {
+        showGasMeter = localStorage.getItem('showGasMeter') === 'true';
+    }
+}
 
 function showProgress(show) {
     const progressEl = document.getElementById('progress');
@@ -93,7 +139,7 @@ function recordAction(actionType) {
     }
 }
 
-function saveRecord(action, destination, purpose, gasMeter, position, usedTollRoad = false) {
+async function saveRecord(action, destination, purpose, gasMeter, position, usedTollRoad = false) {
     const record = {
         id: Date.now(),
         action: action,
@@ -109,19 +155,25 @@ function saveRecord(action, destination, purpose, gasMeter, position, usedTollRo
         usedTollRoad: usedTollRoad
     };
     
-    records.unshift(record);
-    localStorage.setItem('drivingRecords', JSON.stringify(records));
-    
-    document.getElementById('destination').value = '';
-    document.getElementById('purpose').value = '';
-    document.getElementById('gasMeter').value = '';
-    document.getElementById('toll-road').checked = false;
-    
-    displayRecords();
-    showTab('records');
-    
-    showProgress(false);
-    alert(`${action}を記録しました。`);
+    try {
+        await dbInstance.addRecord(record);
+        records.unshift(record);
+        
+        document.getElementById('destination').value = '';
+        document.getElementById('purpose').value = '';
+        document.getElementById('gasMeter').value = '';
+        document.getElementById('toll-road').checked = false;
+        
+        displayRecords();
+        showTab('records');
+        
+        showProgress(false);
+        alert(`${action}を記録しました。`);
+    } catch (error) {
+        console.error('Failed to save record:', error);
+        showProgress(false);
+        alert('記録の保存に失敗しました。');
+    }
 }
 
 function displayRecords() {
@@ -169,11 +221,17 @@ function displayRecords() {
     }).join('');
 }
 
-function deleteRecord(id) {
+async function deleteRecord(id) {
     if (confirm('この記録を削除してもよろしいですか？')) {
-        records = records.filter(record => record.id !== id);
-        localStorage.setItem('drivingRecords', JSON.stringify(records));
-        displayRecords();
+        try {
+            await dbInstance.deleteRecord(id);
+            records = records.filter(record => record.id !== id);
+            displayRecords();
+            console.log('Record deleted successfully');
+        } catch (error) {
+            console.error('Failed to delete record:', error);
+            alert('記録の削除に失敗しました。');
+        }
     }
 }
 
@@ -570,7 +628,7 @@ function loadActionSettings() {
     }
 }
 
-function saveActionSettings() {
+async function saveActionSettings() {
     // UIから設定を取得
     actionSettings = {
         departure: {
@@ -590,16 +648,21 @@ function saveActionSettings() {
         }
     };
     
-    // localStorageに保存
-    localStorage.setItem('actionSettings', JSON.stringify(actionSettings));
-    
-    // 設定を適用
-    applyActionSettings();
-    
-    // メンテナンスタブのセレクトボックスも更新
-    updateMaintenanceSelectOptions();
-    
-    alert('設定を保存しました。');
+    try {
+        // IndexedDBに保存
+        await dbInstance.setSetting('actionSettings', actionSettings);
+        
+        // 設定を適用
+        applyActionSettings();
+        
+        // メンテナンスタブのセレクトボックスも更新
+        updateMaintenanceSelectOptions();
+        
+        alert('設定を保存しました。');
+    } catch (error) {
+        console.error('Failed to save action settings:', error);
+        alert('設定の保存に失敗しました。');
+    }
 }
 
 function applyActionSettings() {
@@ -818,17 +881,36 @@ function generatePassphrase() {
     return passphrase;
 }
 
-function initializePassphrase() {
-    if (!localStorage.getItem('appPassphrase')) {
-        const passphrase = generatePassphrase();
-        localStorage.setItem('appPassphrase', passphrase);
+async function initializePassphrase() {
+    try {
+        const existingPassphrase = await dbInstance.getSetting('appPassphrase');
+        if (!existingPassphrase) {
+            const passphrase = generatePassphrase();
+            await dbInstance.setSetting('appPassphrase', passphrase);
+        }
+    } catch (error) {
+        console.error('Failed to initialize passphrase:', error);
+        // フォールバック: LocalStorageを使用
+        if (!localStorage.getItem('appPassphrase')) {
+            const passphrase = generatePassphrase();
+            localStorage.setItem('appPassphrase', passphrase);
+        }
     }
 }
 
-function displayPassphrase() {
-    const passphrase = localStorage.getItem('appPassphrase');
-    if (passphrase) {
-        document.getElementById('passphrase-display').value = passphrase;
+async function displayPassphrase() {
+    try {
+        const passphrase = await dbInstance.getSetting('appPassphrase');
+        if (passphrase) {
+            document.getElementById('passphrase-display').value = passphrase;
+        }
+    } catch (error) {
+        console.error('Failed to display passphrase:', error);
+        // フォールバック: LocalStorageから取得
+        const passphrase = localStorage.getItem('appPassphrase');
+        if (passphrase) {
+            document.getElementById('passphrase-display').value = passphrase;
+        }
     }
 }
 
@@ -1039,12 +1121,21 @@ function loadGasMeterSettings() {
     }
 }
 
-function saveGasMeterSettings() {
+async function saveGasMeterSettings() {
     const checkbox = document.getElementById('show-gas-meter');
     showGasMeter = checkbox.checked;
-    localStorage.setItem('showGasMeter', showGasMeter);
-    applyGasMeterVisibility();
-    alert('ガソリンメーター表示設定を保存しました。');
+    
+    try {
+        await dbInstance.setSetting('showGasMeter', showGasMeter);
+        applyGasMeterVisibility();
+        alert('ガソリンメーター表示設定を保存しました。');
+    } catch (error) {
+        console.error('Failed to save gas meter settings:', error);
+        // フォールバック: LocalStorageに保存
+        localStorage.setItem('showGasMeter', showGasMeter);
+        applyGasMeterVisibility();
+        alert('ガソリンメーター表示設定を保存しました。（ローカル保存）');
+    }
 }
 
 function applyGasMeterVisibility() {
